@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHACKS — Minimalist Focus Instrument</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        pitch: {
+                            950: '#000000',
+                            900: '#0a0a0c',
+                            850: '#111215',
+                            800: '#18191d',
+                            700: '#24262c',
+                            600: '#343842'
+                        },
+                        vermilion: {
+                            DEFAULT: '#ff3b00',
+                            glow: '#ff3b0040',
+                            dark: '#c42e00',
+                            dim: '#ff3b001a'
+                        },
+                        industrial: {
+                            100: '#f1f3f5',
+                            200: '#d1d5db',
+                            300: '#9ca3af',
+                            400: '#6b7280',
+                            500: '#4b5563'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts for Space Grotesk & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-grid-color: rgba(255, 255, 255, 0.025);
+            --border-color: #24262c;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #000000;
+            color: #f1f3f5;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* Technical Grid Background */
+        .bg-tech-grid {
+            background-size: 28px 28px;
+            background-image: 
+                linear-gradient(to right, var(--bg-grid-color) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--bg-grid-color) 1px, transparent 1px);
+        }
+
+        /* Blockit Exact Segment Block Numerals */
+        .block-digit-wrapper {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 4px;
+            width: 76px;
+            height: 120px;
+            padding: 7px;
+            background: #0a0a0c;
+            border: 1px solid #24262c;
+            position: relative;
+        }
+
+        @media (min-width: 640px) {
+            .block-digit-wrapper {
+                width: 90px;
+                height: 140px;
+                gap: 5px;
+                padding: 8px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .block-digit-wrapper {
+                width: 108px;
+                height: 168px;
+                gap: 6px;
+                padding: 10px;
+            }
+        }
+
+        .digit-pixel {
+            background-color: #18191d;
+            border-radius: 1px;
+            transition: background-color 0.08s ease, box-shadow 0.08s ease;
+        }
+
+        .digit-pixel.active {
+            background-color: #ff3b00;
+            box-shadow: 0 0 10px rgba(255, 59, 0, 0.45);
+        }
+
+        /* Tactile Industrial Buttons */
+        .btn-industrial {
+            position: relative;
+            background: #111215;
+            border: 1px solid #24262c;
+            color: #d1d5db;
+            transition: all 0.1s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .btn-industrial:hover {
+            border-color: #4b5563;
+            color: #f1f3f5;
+            background: #18191d;
+        }
+
+        .btn-industrial:active {
+            transform: translateY(1px);
+        }
+
+        .btn-industrial.active-vermilion {
+            background: #ff3b00;
+            color: #000000;
+            border-color: #ff3b00;
+            font-weight: 700;
+            box-shadow: 0 0 18px rgba(255, 59, 0, 0.35);
+        }
+
+        /* Snapping Duration Slider */
+        .tactile-slider-track {
+            position: relative;
+            height: 20px;
+            background: #0a0a0c;
+            border: 1px solid #24262c;
+            cursor: pointer;
+        }
+
+        .tactile-slider-fill {
+            height: 100%;
+            background: #ff3b00;
+            opacity: 0.85;
+            transition: width 0.05s linear;
+        }
+
+        .tactile-slider-handle {
+            position: absolute;
+            top: -5px;
+            width: 10px;
+            height: 28px;
+            background: #f1f3f5;
+            border: 1px solid #000000;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px rgba(0,0,0,0.9);
+            cursor: grab;
+        }
+
+        .tactile-slider-handle:active {
+            cursor: grabbing;
+            background: #ff3b00;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #24262c;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff3b00;
+        }
+
+        /* Corner Precision Markers */
+        .corner-mark {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-color: #4b5563;
+            pointer-events: none;
+        }
+        .corner-tl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
+        .corner-tr { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; }
+        .corner-bl { bottom: -1px; left: -1px; border-bottom: 2px solid; border-left: 2px solid; }
+        .corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+    </style>
+</head>
+<body class="bg-pitch-950 text-industrial-100 h-screen w-screen flex flex-col antialiased bg-tech-grid">
+
+    <!-- TOP CHACKS INSTRUMENT HEADER -->
+    <header class="h-14 border-b border-pitch-700 bg-pitch-950/90 px-6 flex items-center justify-between shrink-0 z-30">
+        <div class="flex items-center gap-6">
+            <!-- Brand Badge -->
+            <div class="flex items-center gap-2.5">
+                <div class="w-6 h-6 bg-vermilion flex items-center justify-center font-mono font-extrabold text-xs text-pitch-950">
+                    C
+                </div>
+                <span class="font-mono font-extrabold tracking-widest text-base text-industrial-100">CHACKS</span>
+                <span class="text-[10px] font-mono tracking-widest uppercase text-industrial-400 border-l border-pitch-700 pl-2.5">BLOCK.OS_v3.0</span>
+            </div>
+
+            <!-- View Navigation Switcher -->
+            <nav class="hidden md:flex items-center space-x-1 border-l border-pitch-700 pl-6">
+                <button onclick="switchView('focus')" id="nav-focus" class="btn-industrial px-3 py-1 text-[11px] font-mono active-vermilion">
+                    [1] TIMER
+                </button>
+                <button onclick="switchView('activity')" id="nav-activity" class="btn-industrial px-3 py-1 text-[11px] font-mono">
+                    [2] ACTIVITY
+                </button>
+                <button onclick="switchView('history')" id="nav-history" class="btn-industrial px-3 py-1 text-[11px] font-mono">
+                    [3] LOGS
+                </button>
+                <button onclick="switchView('settings')" id="nav-settings" class="btn-industrial px-3 py-1 text-[11px] font-mono">
+                    [4] CONFIG
+                </button>
+            </nav>
+        </div>
+
+        <!-- Status & Quick Controls -->
+        <div class="flex items-center gap-4">
+            <!-- Audio Ambient Toggle -->
+            <button onclick="toggleAudioCompanion()" id="audio-toggle-btn" class="btn-industrial px-2.5 py-1 text-[11px] font-mono flex items-center gap-2 text-industrial-300">
+                <i data-lucide="volume-2" class="w-3.5 h-3.5 text-vermilion"></i>
+                <span class="hidden sm:inline">NOISE: OFF</span>
+            </button>
+
+            <!-- Spotify Panel Toggle -->
+            <button onclick="toggleSpotifyPanel()" class="btn-industrial px-2.5 py-1 text-[11px] font-mono flex items-center gap-2 text-industrial-300">
+                <i data-lucide="radio" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">SPOTIFY</span>
+            </button>
+
+            <!-- System Live Clock -->
+            <div class="hidden lg:flex flex-col text-right font-mono border-l border-pitch-700 pl-4">
+                <span id="system-time" class="text-xs font-bold text-industrial-200">00:00:00</span>
+                <span class="text-[9px] text-industrial-500 uppercase tracking-widest">REALTIME</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE CONTENT -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- VIEW 1: FOCUS MAIN INSTRUMENT -->
+        <main id="view-focus" class="view-panel flex-1 flex flex-col justify-between p-4 md:p-8 max-w-6xl mx-auto w-full relative">
+            
+            <!-- Top Controls Header: Mode & Engine -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-pitch-700 pb-4">
+                
+                <!-- Timer Mode Selector -->
+                <div class="flex items-center gap-1 bg-pitch-900 p-1 border border-pitch-700 w-full sm:w-auto justify-center">
+                    <button onclick="setTimerMode('focus')" id="mode-btn-focus" class="btn-industrial flex-1 sm:flex-none px-4 py-1.5 text-xs font-mono active-vermilion">
+                        FOCUS
+                    </button>
+                    <button onclick="setTimerMode('shortBreak')" id="mode-btn-shortBreak" class="btn-industrial flex-1 sm:flex-none px-4 py-1.5 text-xs font-mono">
+                        SHORT BREAK
+                    </button>
+                    <button onclick="setTimerMode('longBreak')" id="mode-btn-longBreak" class="btn-industrial flex-1 sm:flex-none px-4 py-1.5 text-xs font-mono">
+                        LONG BREAK
+                    </button>
+                </div>
+
+                <!-- Subject Selector & Task Entry -->
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div class="flex items-center bg-pitch-900 border border-pitch-700 px-3 py-1.5">
+                        <span class="text-[10px] font-mono text-industrial-400 uppercase tracking-widest mr-2">SUBJ:</span>
+                        <select id="subject-select" onchange="updateSelectedSubject(this.value)" class="bg-transparent text-xs font-mono text-industrial-100 focus:outline-none cursor-pointer">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <input type="text" id="task-input" placeholder="SESSION_TARGET..." oninput="updateTaskDescription(this.value)" class="bg-pitch-900 border border-pitch-700 px-3 py-1.5 text-xs font-mono text-industrial-100 placeholder:text-industrial-500 focus:outline-none flex-1 sm:w-60">
+                </div>
+            </div>
+
+            <!-- CENTERPIECE: BLOCK NUMERAL DISPLAY & INSTRUMENT CONTROLS -->
+            <div class="my-auto flex flex-col items-center justify-center py-4 relative">
+                
+                <!-- Corner Architectural Frame -->
+                <div class="relative p-6 sm:p-10 md:p-12 bg-pitch-900/80 border border-pitch-700 shadow-2xl flex flex-col items-center max-w-3xl w-full">
+                    <div class="corner-mark corner-tl"></div>
+                    <div class="corner-mark corner-tr"></div>
+                    <div class="corner-mark corner-bl"></div>
+                    <div class="corner-mark corner-br"></div>
+
+                    <!-- Mode Indicator Header inside frame -->
+                    <div class="w-full flex items-center justify-between font-mono text-[10px] text-industrial-400 border-b border-pitch-700 pb-3 mb-6">
+                        <span class="tracking-widest" id="display-mode-label">INSTRUMENT: CHACKS_COUNTDOWN</span>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-industrial-500" id="status-block"></span>
+                            <span id="status-text" class="uppercase">IDLE_READY</span>
+                        </div>
+                    </div>
+
+                    <!-- Oversized Custom Geometric Block Digits -->
+                    <div class="flex items-center justify-center gap-2 sm:gap-4 lg:gap-6 my-2">
+                        <!-- Minutes Digit 1 -->
+                        <div class="block-digit-wrapper" id="digit-m1"></div>
+                        <!-- Minutes Digit 2 -->
+                        <div class="block-digit-wrapper" id="digit-m2"></div>
+
+                        <!-- Colon Separator -->
+                        <div class="flex flex-col gap-3 justify-center items-center px-1 sm:px-2">
+                            <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-vermilion shadow-[0_0_10px_#ff3b00]"></div>
+                            <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-vermilion shadow-[0_0_10px_#ff3b00]"></div>
+                        </div>
+
+                        <!-- Seconds Digit 1 -->
+                        <div class="block-digit-wrapper" id="digit-s1"></div>
+                        <!-- Seconds Digit 2 -->
+                        <div class="block-digit-wrapper" id="digit-s2"></div>
+                    </div>
+
+                    <!-- Tactile Snapping Duration Slider -->
+                    <div class="w-full max-w-md mt-8 space-y-2" id="slider-container">
+                        <div class="flex justify-between font-mono text-[10px] text-industrial-400 uppercase tracking-widest">
+                            <span>DURATION ADJUST</span>
+                            <span id="slider-val-label" class="text-vermilion font-bold">25 MIN</span>
+                        </div>
+                        <div id="tactile-slider" class="tactile-slider-track" onclick="handleSliderClick(event)">
+                            <div id="tactile-slider-fill" class="tactile-slider-fill" style="width: 41.6%;"></div>
+                            <div id="tactile-slider-handle" class="tactile-slider-handle" style="left: 41.6%;"></div>
+                        </div>
+                        <!-- Snap Markers -->
+                        <div class="flex justify-between font-mono text-[9px] text-industrial-500 px-1 pt-1">
+                            <span>5m</span>
+                            <span>15m</span>
+                            <span>25m</span>
+                            <span>45m</span>
+                            <span>60m</span>
+                        </div>
+                    </div>
+
+                    <!-- Primary Action Buttons -->
+                    <div class="flex items-center gap-4 mt-8 w-full max-w-md">
+                        <button onclick="startTimer()" id="btn-start" class="btn-industrial active-vermilion flex-1 py-3.5 text-sm font-bold flex items-center justify-center gap-2 tracking-widest">
+                            <i data-lucide="play" class="w-4 h-4 fill-current"></i> START SESSION
+                        </button>
+                        <button onclick="pauseTimer()" id="btn-pause" class="btn-industrial hidden flex-1 py-3.5 text-sm font-bold flex items-center justify-center gap-2 text-amber-400 border-amber-500/50">
+                            <i data-lucide="pause" class="w-4 h-4 fill-current"></i> PAUSE
+                        </button>
+                        <button onclick="resumeTimer()" id="btn-resume" class="btn-industrial hidden flex-1 py-3.5 text-sm font-bold active-vermilion flex items-center justify-center gap-2">
+                            <i data-lucide="play" class="w-4 h-4 fill-current"></i> RESUME
+                        </button>
+                        <button onclick="finishSessionModal()" id="btn-finish" class="btn-industrial hidden px-6 py-3.5 text-sm font-bold text-industrial-300">
+                            ABORT / FINISH
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Bottom Metadata Footer Bar -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-pitch-700 pt-4 font-mono text-xs text-industrial-400">
+                <div class="bg-pitch-900 p-2.5 border border-pitch-700 flex flex-col">
+                    <span class="text-[9px] uppercase tracking-widest text-industrial-500">TODAY FOCUS</span>
+                    <span id="footer-today-time" class="text-industrial-100 font-bold text-sm">0 MIN</span>
+                </div>
+                <div class="bg-pitch-900 p-2.5 border border-pitch-700 flex flex-col">
+                    <span class="text-[9px] uppercase tracking-widest text-industrial-500">CURRENT STREAK</span>
+                    <span id="footer-streak" class="text-industrial-100 font-bold text-sm">0 DAYS</span>
+                </div>
+                <div class="bg-pitch-900 p-2.5 border border-pitch-700 flex flex-col">
+                    <span class="text-[9px] uppercase tracking-widest text-industrial-500">DAILY TARGET</span>
+                    <span id="footer-target" class="text-industrial-100 font-bold text-sm">120 MIN</span>
+                </div>
+                <div class="bg-pitch-900 p-2.5 border border-pitch-700 flex flex-col">
+                    <span class="text-[9px] uppercase tracking-widest text-industrial-500">COMPLETED SESSIONS</span>
+                    <span id="footer-count" class="text-industrial-100 font-bold text-sm">0</span>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- RIGHT SPOTIFY EMBED DRAWER -->
+        <aside id="spotify-drawer" class="w-80 bg-pitch-900 border-l border-pitch-700 p-5 flex flex-col justify-between hidden z-20">
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b border-pitch-700 pb-3">
+                    <span class="font-mono text-xs font-bold tracking-widest uppercase text-industrial-200">SPOTIFY PLAYER</span>
+                    <button onclick="toggleSpotifyPanel()" class="text-industrial-400 hover:text-industrial-100">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <p class="text-xs font-mono text-industrial-400">Paste playlist or track URL for ambient focus audio:</p>
+                <div class="flex gap-2">
+                    <input type="text" id="spotify-url-input" placeholder="https://open.spotify.com/..." class="bg-pitch-950 border border-pitch-700 px-3 py-1.5 text-xs font-mono text-industrial-100 flex-1 focus:outline-none">
+                    <button onclick="saveSpotifyUrl()" class="btn-industrial px-3 py-1.5 text-xs font-mono">SET</button>
+                </div>
+                <div id="spotify-embed-container" class="w-full h-80 bg-pitch-950 border border-pitch-700 flex items-center justify-center p-4 text-center font-mono text-xs text-industrial-500">
+                    NO PLAYER CONFIGURED
+                </div>
+            </div>
+            <div class="font-mono text-[10px] text-industrial-500 text-center border-t border-pitch-700 pt-3">
+                CHACKS AUDIO ENGINE
+            </div>
+        </aside>
+
+        <!-- VIEW 2: BLOCK HEATMAP & ACTIVITY VIEW -->
+        <section id="view-activity" class="view-panel hidden flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full overflow-y-auto space-y-8">
+            <div class="border-b border-pitch-700 pb-4">
+                <h2 class="font-mono text-lg font-bold tracking-wider text-industrial-100">FOCUS ACTIVITY & HEATMAP</h2>
+                <p class="font-mono text-xs text-industrial-400">365-day block intensity logs and subject breakdown.</p>
+            </div>
+
+            <!-- Heatmap Block Grid -->
+            <div class="bg-pitch-900 border border-pitch-700 p-6 relative">
+                <div class="corner-mark corner-tl"></div>
+                <div class="corner-mark corner-tr"></div>
+                <div class="corner-mark corner-bl"></div>
+                <div class="corner-mark corner-br"></div>
+
+                <div class="flex items-center justify-between mb-4 font-mono text-xs">
+                    <span class="text-industrial-300 font-bold uppercase tracking-widest">365-DAY INTENSITY GRID</span>
+                    <div class="flex items-center gap-2 text-[10px] text-industrial-400">
+                        <span>MIN</span>
+                        <div class="flex gap-1">
+                            <div class="w-3 h-3 bg-pitch-800 border border-pitch-700"></div>
+                            <div class="w-3 h-3 bg-vermilion/30"></div>
+                            <div class="w-3 h-3 bg-vermilion/60"></div>
+                            <div class="w-3 h-3 bg-vermilion/90"></div>
+                            <div class="w-3 h-3 bg-vermilion"></div>
+                        </div>
+                        <span>MAX</span>
+                    </div>
+                </div>
+
+                <!-- Grid Overflow Container -->
+                <div class="overflow-x-auto pb-2">
+                    <div id="heatmap-grid" class="inline-grid grid-rows-7 grid-flow-col gap-1.5 min-w-[760px]">
+                        <!-- Dynamically filled -->
+                    </div>
+                </div>
+                <div id="heatmap-selected-info" class="font-mono text-xs text-industrial-400 mt-4 border-t border-pitch-700 pt-3">
+                    Click any day square to view logged study hours.
+                </div>
+            </div>
+
+            <!-- Subject Breakdown & Weekly Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Weekly Activity Bar Chart -->
+                <div class="bg-pitch-900 border border-pitch-700 p-6 relative">
+                    <div class="corner-mark corner-tl"></div>
+                    <div class="corner-mark corner-tr"></div>
+                    <h3 class="font-mono text-xs font-bold tracking-widest uppercase text-industrial-300 mb-6">WEEKLY FOCUS DISTRIBUTION</h3>
+                    <div id="weekly-chart-container" class="h-48 flex items-end justify-between gap-3 font-mono text-xs">
+                        <!-- Dynamically filled -->
+                    </div>
+                </div>
+
+                <!-- Subject Distribution -->
+                <div class="bg-pitch-900 border border-pitch-700 p-6 relative">
+                    <div class="corner-mark corner-tl"></div>
+                    <div class="corner-mark corner-tr"></div>
+                    <h3 class="font-mono text-xs font-bold tracking-widest uppercase text-industrial-300 mb-6">SUBJECT METRICS</h3>
+                    <div id="subject-breakdown-container" class="space-y-4 font-mono text-xs">
+                        <!-- Dynamically filled -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: SESSION HISTORY LOGS -->
+        <section id="view-history" class="view-panel hidden flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full overflow-y-auto space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-pitch-700 pb-4">
+                <div>
+                    <h2 class="font-mono text-lg font-bold tracking-wider text-industrial-100">SESSION LOG ARCHIVE</h2>
+                    <p class="font-mono text-xs text-industrial-400">Chronological history of recorded work intervals.</p>
+                </div>
+                <div class="flex gap-3">
+                    <select id="history-filter-subject" onchange="renderHistory()" class="bg-pitch-900 border border-pitch-700 text-xs font-mono px-3 py-1.5 text-industrial-200">
+                        <option value="all">ALL SUBJECTS</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Logs Table -->
+            <div class="bg-pitch-900 border border-pitch-700 overflow-hidden">
+                <table class="w-full text-left font-mono text-xs">
+                    <thead>
+                        <tr class="border-b border-pitch-700 text-industrial-400 bg-pitch-950">
+                            <th class="p-3">TIMESTAMP</th>
+                            <th class="p-3">SUBJECT</th>
+                            <th class="p-3">OBJECTIVE</th>
+                            <th class="p-3">DURATION</th>
+                            <th class="p-3">STATUS</th>
+                            <th class="p-3 text-right">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body" class="divide-y divide-pitch-800 text-industrial-200">
+                        <!-- Dynamically filled -->
+                    </tbody>
+                </table>
+                <div id="history-empty" class="p-8 text-center font-mono text-xs text-industrial-500">
+                    NO LOGGED SESSIONS IN DATABASE
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: CONFIGURATION & PREFERENCES -->
+        <section id="view-settings" class="view-panel hidden flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full overflow-y-auto space-y-8">
+            <div class="border-b border-pitch-700 pb-4">
+                <h2 class="font-mono text-lg font-bold tracking-wider text-industrial-100">SYSTEM CONFIGURATION</h2>
+                <p class="font-mono text-xs text-industrial-400">Adjust timer intervals, subjects, and data persistence.</p>
+            </div>
+
+            <div class="space-y-6 font-mono text-xs">
+                <!-- Durations -->
+                <div class="bg-pitch-900 border border-pitch-700 p-6 space-y-4">
+                    <h3 class="text-vermilion font-bold tracking-widest uppercase">DEFAULT INTERVALS (MINUTES)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-industrial-400 mb-1">FOCUS DURATION</label>
+                            <input type="number" id="setting-focus-duration" class="w-full bg-pitch-950 border border-pitch-700 px-3 py-2 text-industrial-100 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-industrial-400 mb-1">SHORT BREAK</label>
+                            <input type="number" id="setting-short-break" class="w-full bg-pitch-950 border border-pitch-700 px-3 py-2 text-industrial-100 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-industrial-400 mb-1">LONG BREAK</label>
+                            <input type="number" id="setting-long-break" class="w-full bg-pitch-950 border border-pitch-700 px-3 py-2 text-industrial-100 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subject Manager -->
+                <div class="bg-pitch-900 border border-pitch-700 p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-vermilion font-bold tracking-widest uppercase">MANAGED SUBJECTS</h3>
+                        <button onclick="openAddSubjectModal()" class="btn-industrial px-3 py-1 text-xs">ADD SUBJECT</button>
+                    </div>
+                    <div id="subjects-list-container" class="divide-y divide-pitch-800">
+                        <!-- Dynamically filled -->
+                    </div>
+                </div>
+
+                <!-- Backup & Reset -->
+                <div class="bg-pitch-900 border border-pitch-700 p-6 space-y-4">
+                    <h3 class="text-vermilion font-bold tracking-widest uppercase">STORAGE & BACKUP</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="exportDataJson()" class="btn-industrial px-4 py-2">EXPORT DATA (JSON)</button>
+                        <button onclick="confirmResetAllData()" class="btn-industrial px-4 py-2 text-rose-400 border-rose-500/30">RESET ALL DATA</button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button onclick="saveAllSettings()" class="btn-industrial active-vermilion px-6 py-3 font-bold">SAVE CONFIGURATION</button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- MODAL OVERLAYS -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-pitch-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        
+        <!-- Add Subject Modal -->
+        <div id="modal-add-subject" class="bg-pitch-900 border border-pitch-700 p-6 max-w-sm w-full space-y-4 hidden font-mono">
+            <h3 class="text-xs font-bold tracking-widest text-industrial-100 uppercase">ADD NEW SUBJECT</h3>
+            <input type="text" id="new-subject-name-input" placeholder="SUBJECT_NAME..." class="w-full bg-pitch-950 border border-pitch-700 p-2 text-xs text-industrial-100 focus:outline-none">
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeModal()" class="btn-industrial px-3 py-1.5 text-xs">CANCEL</button>
+                <button onclick="createNewSubject()" class="btn-industrial active-vermilion px-3 py-1.5 text-xs">CREATE</button>
+            </div>
+        </div>
+
+        <!-- Confirm Abort Session Modal -->
+        <div id="modal-session-finish" class="bg-pitch-900 border border-pitch-700 p-6 max-w-sm w-full space-y-4 hidden font-mono">
+            <h3 class="text-xs font-bold tracking-widest text-industrial-100 uppercase">FINISH SESSION?</h3>
+            <p class="text-xs text-industrial-400">Save completed elapsed focus time to log history or discard?</p>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="discardActiveSession()" class="btn-industrial px-3 py-1.5 text-xs text-rose-400">DISCARD</button>
+                <button onclick="saveActiveSessionAndFinish()" class="btn-industrial active-vermilion px-3 py-1.5 text-xs">SAVE & FINISH</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- CHACKS ACCURATE GEOMETRIC BLOCK DIGIT MATRICES ---
+        // 3x5 Pixel Matrices for digits 0-9 matching Blockit design
+        const DIGIT_MAP = {
+            '0': [
+                1,1,1,
+                1,0,1,
+                1,0,1,
+                1,0,1,
+                1,1,1
+            ],
+            '1': [
+                0,1,0,
+                1,1,0,
+                0,1,0,
+                0,1,0,
+                1,1,1
+            ],
+            '2': [
+                1,1,1,
+                0,0,1,
+                1,1,1,
+                1,0,0,
+                1,1,1
+            ],
+            '3': [
+                1,1,1,
+                0,0,1,
+                1,1,1,
+                0,0,1,
+                1,1,1
+            ],
+            '4': [
+                1,0,1,
+                1,0,1,
+                1,1,1,
+                0,0,1,
+                0,0,1
+            ],
+            '5': [
+                1,1,1,
+                1,0,0,
+                1,1,1,
+                0,0,1,
+                1,1,1
+            ],
+            '6': [
+                1,1,1,
+                1,0,0,
+                1,1,1,
+                1,0,1,
+                1,1,1
+            ],
+            '7': [
+                1,1,1,
+                0,0,1,
+                0,1,0,
+                0,1,0,
+                0,1,0
+            ],
+            '8': [
+                1,1,1,
+                1,0,1,
+                1,1,1,
+                1,0,1,
+                1,1,1
+            ],
+            '9': [
+                1,1,1,
+                1,0,1,
+                1,1,1,
+                0,0,1,
+                1,1,1
+            ]
+        };
+
+        function renderBlockDigit(containerId, char) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const matrix = DIGIT_MAP[char] || DIGIT_MAP['0'];
+            
+            container.innerHTML = '';
+            matrix.forEach(bit => {
+                const pixel = document.createElement('div');
+                pixel.className = `digit-pixel ${bit === 1 ? 'active' : ''}`;
+                container.appendChild(pixel);
+            });
+        }
+
+        // --- CHACKS STATE MANAGEMENT ---
+        const DEFAULT_SETTINGS = {
+            focusDuration: 25,
+            shortBreak: 5,
+            longBreak: 15,
+            dailyGoal: 120,
+            spotifyUrl: ''
+        };
+
+        const DEFAULT_SUBJECTS = ['Mathematics', 'Physics', 'Computer Science', 'Architecture', 'General Focus'];
+
+        let state = {
+            settings: { ...DEFAULT_SETTINGS },
+            subjects: [ ...DEFAULT_SUBJECTS ],
+            sessions: [],
+            activeSession: null,
+            timerMode: 'focus',
+            selectedSubject: DEFAULT_SUBJECTS[0],
+            taskDescription: '',
+            timeRemaining: 25 * 60,
+            isTimerRunning: false,
+            timerInterval: null,
+            audioCtx: null,
+            isAudioPlaying: false,
+            audioNoiseNode: null
+        };
+
+        function loadLocalStorage() {
+            try {
+                const s = localStorage.getItem('chacks_block_settings');
+                if (s) state.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(s) };
+
+                const sub = localStorage.getItem('chacks_block_subjects');
+                if (sub) state.subjects = JSON.parse(sub);
+
+                const sess = localStorage.getItem('chacks_block_sessions');
+                if (sess) state.sessions = JSON.parse(sess);
+            } catch (e) {
+                console.error("Storage load error:", e);
+            }
+        }
+
+        function saveLocalStorage() {
+            localStorage.setItem('chacks_block_settings', JSON.stringify(state.settings));
+            localStorage.setItem('chacks_block_subjects', JSON.stringify(state.subjects));
+            localStorage.setItem('chacks_block_sessions', JSON.stringify(state.sessions));
+        }
+
+        // --- TIMER & DISPLAY FUNCTIONS ---
+        function updateDisplayDigits() {
+            const mins = Math.floor(state.timeRemaining / 60);
+            const secs = state.timeRemaining % 60;
+
+            const mStr = String(mins).padStart(2, '0');
+            const sStr = String(secs).padStart(2, '0');
+
+            renderBlockDigit('digit-m1', mStr[0]);
+            renderBlockDigit('digit-m2', mStr[1]);
+            renderBlockDigit('digit-s1', sStr[0]);
+            renderBlockDigit('digit-s2', sStr[1]);
+        }
+
+        function setTimerMode(mode) {
+            if (state.isTimerRunning) return;
+            state.timerMode = mode;
+
+            ['focus', 'shortBreak', 'longBreak'].forEach(m => {
+                const btn = document.getElementById(`mode-btn-${m}`);
+                if (m === mode) {
+                    btn.classList.add('active-vermilion');
+                } else {
+                    btn.classList.remove('active-vermilion');
+                }
+            });
+
+            const dur = mode === 'focus' ? state.settings.focusDuration :
+                        mode === 'shortBreak' ? state.settings.shortBreak : state.settings.longBreak;
+
+            state.timeRemaining = dur * 60;
+            updateSliderPosition(dur);
+            updateDisplayDigits();
+        }
+
+        // --- TACTILE SLIDER HANDLER ---
+        function handleSliderClick(e) {
+            if (state.isTimerRunning) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const pct = Math.max(0, Math.min(1, clickX / rect.width));
+            
+            // Snap to range 5 to 60 mins
+            const minVal = 5;
+            const maxVal = 60;
+            const rawVal = Math.round(minVal + pct * (maxVal - minVal));
+            
+            // Snap steps: 5m intervals
+            const snappedVal = Math.round(rawVal / 5) * 5 || 5;
+
+            updateSliderPosition(snappedVal);
+            state.timeRemaining = snappedVal * 60;
+            if (state.timerMode === 'focus') state.settings.focusDuration = snappedVal;
+            updateDisplayDigits();
+        }
+
+        function updateSliderPosition(mins) {
+            const minVal = 5;
+            const maxVal = 60;
+            const pct = Math.max(0, Math.min(100, ((mins - minVal) / (maxVal - minVal)) * 100));
+
+            document.getElementById('tactile-slider-fill').style.width = `${pct}%`;
+            document.getElementById('tactile-slider-handle').style.left = `${pct}%`;
+            document.getElementById('slider-val-label').textContent = `${mins} MIN`;
+        }
+
+        // --- TIMER ENGINE ---
+        function startTimer() {
+            state.isTimerRunning = true;
+            const startTime = Date.now();
+
+            state.activeSession = {
+                startTime,
+                mode: state.timerMode,
+                subject: state.selectedSubject,
+                task: state.taskDescription,
+                initialDurationSec: state.timeRemaining
+            };
+
+            document.getElementById('btn-start').classList.add('hidden');
+            document.getElementById('btn-pause').classList.remove('hidden');
+            document.getElementById('btn-finish').classList.remove('hidden');
+            document.getElementById('slider-container').classList.add('opacity-40', 'pointer-events-none');
+            
+            document.getElementById('status-block').className = "w-2 h-2 bg-vermilion animate-ping";
+            document.getElementById('status-text').textContent = 'TIMER_RUNNING';
+
+            state.timerInterval = setInterval(() => {
+                if (state.timeRemaining > 0) {
+                    state.timeRemaining--;
+                    updateDisplayDigits();
+                } else {
+                    completeSession();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            state.isTimerRunning = false;
+            clearInterval(state.timerInterval);
+
+            document.getElementById('btn-pause').classList.add('hidden');
+            document.getElementById('btn-resume').classList.remove('hidden');
+            document.getElementById('status-block').className = "w-2 h-2 bg-amber-500";
+            document.getElementById('status-text').textContent = 'PAUSED';
+        }
+
+        function resumeTimer() {
+            state.isTimerRunning = true;
+            document.getElementById('btn-resume').classList.add('hidden');
+            document.getElementById('btn-pause').classList.remove('hidden');
+            document.getElementById('status-block').className = "w-2 h-2 bg-vermilion animate-ping";
+            document.getElementById('status-text').textContent = 'TIMER_RUNNING';
+
+            state.timerInterval = setInterval(() => {
+                if (state.timeRemaining > 0) {
+                    state.timeRemaining--;
+                    updateDisplayDigits();
+                } else {
+                    completeSession();
+                }
+            }, 1000);
+        }
+
+        function finishSessionModal() {
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            document.getElementById('modal-session-finish').classList.remove('hidden');
+        }
+
+        function discardActiveSession() {
+            clearInterval(state.timerInterval);
+            state.isTimerRunning = false;
+            state.activeSession = null;
+            closeModal();
+            resetTimerControls();
+        }
+
+        function saveActiveSessionAndFinish() {
+            clearInterval(state.timerInterval);
+            state.isTimerRunning = false;
+
+            if (state.activeSession) {
+                const elapsedSec = state.activeSession.initialDurationSec - state.timeRemaining;
+                if (elapsedSec > 10 && state.activeSession.mode === 'focus') {
+                    state.sessions.unshift({
+                        id: 'sess_' + Date.now(),
+                        startTime: state.activeSession.startTime,
+                        subject: state.activeSession.subject,
+                        task: state.activeSession.task || 'Focus Session',
+                        durationSec: elapsedSec,
+                        status: 'COMPLETED'
+                    });
+                    saveLocalStorage();
+                }
+            }
+
+            state.activeSession = null;
+            closeModal();
+            resetTimerControls();
+            updateFooterStats();
+        }
+
+        function completeSession() {
+            clearInterval(state.timerInterval);
+            state.isTimerRunning = false;
+
+            if (state.activeSession && state.activeSession.mode === 'focus') {
+                state.sessions.unshift({
+                    id: 'sess_' + Date.now(),
+                    startTime: state.activeSession.startTime,
+                    subject: state.activeSession.subject,
+                    task: state.activeSession.task || 'Focus Session',
+                    durationSec: state.activeSession.initialDurationSec,
+                    status: 'COMPLETED'
+                });
+                saveLocalStorage();
+            }
+
+            state.activeSession = null;
+            resetTimerControls();
+            updateFooterStats();
+            playChimeSound();
+        }
+
+        function resetTimerControls() {
+            document.getElementById('btn-start').classList.remove('hidden');
+            document.getElementById('btn-pause').classList.add('hidden');
+            document.getElementById('btn-resume').classList.add('hidden');
+            document.getElementById('btn-finish').classList.add('hidden');
+            document.getElementById('slider-container').classList.remove('opacity-40', 'pointer-events-none');
+
+            document.getElementById('status-block').className = "w-2 h-2 bg-industrial-500";
+            document.getElementById('status-text').textContent = 'IDLE_READY';
+
+            setTimerMode(state.timerMode);
+        }
+
+        // --- SYNTH AUDIO & CHIME ---
+        function playChimeSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.5);
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.8);
+            } catch (e) {
+                console.debug("Audio error:", e);
+            }
+        }
+
+        function toggleAudioCompanion() {
+            const btn = document.getElementById('audio-toggle-btn');
+            if (!state.isAudioPlaying) {
+                try {
+                    if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const bufferSize = state.audioCtx.sampleRate * 2;
+                    const noiseBuffer = state.audioCtx.createBuffer(1, bufferSize, state.audioCtx.sampleRate);
+                    const output = noiseBuffer.getChannelData(0);
+                    let lastOut = 0.0;
+                    for (let i = 0; i < bufferSize; i++) {
+                        const white = Math.random() * 2 - 1;
+                        output[i] = (lastOut + (0.02 * white)) / 1.02;
+                        lastOut = output[i];
+                        output[i] *= 3.5;
+                    }
+
+                    state.audioNoiseNode = state.audioCtx.createBufferSource();
+                    state.audioNoiseNode.buffer = noiseBuffer;
+                    state.audioNoiseNode.loop = true;
+
+                    const gain = state.audioCtx.createGain();
+                    gain.gain.value = 0.05;
+
+                    state.audioNoiseNode.connect(gain);
+                    gain.connect(state.audioCtx.destination);
+                    state.audioNoiseNode.start();
+
+                    state.isAudioPlaying = true;
+                    btn.classList.add('active-vermilion');
+                    btn.querySelector('span').textContent = 'NOISE: ON';
+                } catch (e) {
+                    console.error("Audio error:", e);
+                }
+            } else {
+                if (state.audioNoiseNode) state.audioNoiseNode.stop();
+                state.isAudioPlaying = false;
+                btn.classList.remove('active-vermilion');
+                btn.querySelector('span').textContent = 'NOISE: OFF';
+            }
+        }
+
+        // --- VIEWS & NAVIGATION ---
+        function switchView(viewName) {
+            document.querySelectorAll('.view-panel').forEach(v => v.classList.add('hidden'));
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+            ['focus', 'activity', 'history', 'settings'].forEach((v, idx) => {
+                const btn = document.getElementById(`nav-${v}`);
+                if (v === viewName) {
+                    btn.classList.add('active-vermilion');
+                } else {
+                    btn.classList.remove('active-vermilion');
+                }
+            });
+
+            if (viewName === 'activity') renderActivityView();
+            if (viewName === 'history') renderHistory();
+            if (viewName === 'settings') populateSettingsForm();
+        }
+
+        // --- FOOTER & STATS ---
+        function updateFooterStats() {
+            const todayStr = new Date().toDateString();
+            let todaySec = 0;
+            state.sessions.forEach(s => {
+                if (new Date(s.startTime).toDateString() === todayStr) todaySec += s.durationSec;
+            });
+
+            const todayMins = Math.floor(todaySec / 60);
+            document.getElementById('footer-today-time').textContent = `${todayMins} MIN`;
+            document.getElementById('footer-target').textContent = `${state.settings.dailyGoal} MIN`;
+            document.getElementById('footer-count').textContent = state.sessions.length;
+
+            const studyDays = new Set(state.sessions.map(s => new Date(s.startTime).toDateString()));
+            document.getElementById('footer-streak').textContent = `${studyDays.size} DAYS`;
+        }
+
+        // --- ACTIVITY VIEW HEATMAP ---
+        function renderActivityView() {
+            const grid = document.getElementById('heatmap-grid');
+            grid.innerHTML = '';
+
+            const dailyMins = {};
+            state.sessions.forEach(s => {
+                const dKey = new Date(s.startTime).toDateString();
+                dailyMins[dKey] = (dailyMins[dKey] || 0) + Math.floor(s.durationSec / 60);
+            });
+
+            const today = new Date();
+            for (let i = 364; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                const dKey = d.toDateString();
+                const mins = dailyMins[dKey] || 0;
+
+                let colorClass = 'bg-pitch-800 border-pitch-700';
+                if (mins > 0 && mins < 30) colorClass = 'bg-vermilion/30 border-vermilion/40';
+                else if (mins >= 30 && mins < 60) colorClass = 'bg-vermilion/60 border-vermilion/70';
+                else if (mins >= 60 && mins < 120) colorClass = 'bg-vermilion/90 border-vermilion';
+                else if (mins >= 120) colorClass = 'bg-vermilion border-vermilion shadow-[0_0_6px_#ff3b00]';
+
+                const cell = document.createElement('div');
+                cell.className = `w-3 h-3 border cursor-pointer transition-transform hover:scale-125 ${colorClass}`;
+                cell.onclick = () => {
+                    document.getElementById('heatmap-selected-info').textContent = `DATE: ${d.toLocaleDateString()} | LOGGED FOCUS: ${mins} MIN`;
+                };
+                grid.appendChild(cell);
+            }
+
+            renderWeeklyChart(dailyMins);
+            renderSubjectBreakdown();
+        }
+
+        function renderWeeklyChart(dailyMins) {
+            const container = document.getElementById('weekly-chart-container');
+            container.innerHTML = '';
+
+            const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            const today = new Date();
+
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                const mins = dailyMins[d.toDateString()] || 0;
+                const pct = Math.max(10, Math.min(100, (mins / 120) * 100));
+
+                const col = document.createElement('div');
+                col.className = 'flex-1 flex flex-col items-center gap-2 h-full justify-end';
+                col.innerHTML = `
+                    <span class="text-[10px] text-industrial-400">${mins}m</span>
+                    <div class="w-full bg-pitch-950 border border-pitch-700 h-full flex items-end">
+                        <div class="w-full bg-vermilion transition-all" style="height: ${pct}%;"></div>
+                    </div>
+                    <span class="text-[10px] text-industrial-400 font-bold">${days[d.getDay()]}</span>
+                `;
+                container.appendChild(col);
+            }
+        }
+
+        function renderSubjectBreakdown() {
+            const container = document.getElementById('subject-breakdown-container');
+            container.innerHTML = '';
+
+            const subjectSec = {};
+            let totalSec = 0;
+            state.sessions.forEach(s => {
+                subjectSec[s.subject] = (subjectSec[s.subject] || 0) + s.durationSec;
+                totalSec += s.durationSec;
+            });
+
+            if (Object.keys(subjectSec).length === 0) {
+                container.innerHTML = '<div class="text-industrial-500">NO SUBJECT DATA RECORDED</div>';
+                return;
+            }
+
+            Object.entries(subjectSec).forEach(([sub, sec]) => {
+                const mins = Math.floor(sec / 60);
+                const pct = totalSec > 0 ? Math.round((sec / totalSec) * 100) : 0;
+
+                const row = document.createElement('div');
+                row.className = 'space-y-1';
+                row.innerHTML = `
+                    <div class="flex justify-between text-xs">
+                        <span class="text-industrial-200 font-bold">${sub}</span>
+                        <span class="text-industrial-400">${mins} MIN (${pct}%)</span>
+                    </div>
+                    <div class="w-full bg-pitch-950 border border-pitch-700 h-2">
+                        <div class="bg-vermilion h-full" style="width: ${pct}%;"></div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // --- HISTORY LOGS ---
+        function renderHistory() {
+            const tbody = document.getElementById('history-table-body');
+            const empty = document.getElementById('history-empty');
+            tbody.innerHTML = '';
+
+            if (state.sessions.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            } else {
+                empty.classList.add('hidden');
+            }
+
+            state.sessions.forEach(s => {
+                const d = new Date(s.startTime);
+                const timeStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const mins = Math.floor(s.durationSec / 60);
+
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-pitch-800 hover:bg-pitch-850';
+                tr.innerHTML = `
+                    <td class="p-3 text-industrial-400">${timeStr}</td>
+                    <td class="p-3 text-industrial-100 font-bold">${s.subject}</td>
+                    <td class="p-3 text-industrial-300">${s.task}</td>
+                    <td class="p-3 text-industrial-100">${mins} MIN</td>
+                    <td class="p-3"><span class="text-vermilion font-bold">[${s.status}]</span></td>
+                    <td class="p-3 text-right">
+                        <button onclick="deleteSession('${s.id}')" class="text-rose-400 hover:text-rose-300">DELETE</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteSession(id) {
+            state.sessions = state.sessions.filter(s => s.id !== id);
+            saveLocalStorage();
+            renderHistory();
+            updateFooterStats();
+        }
+
+        // --- CONFIG & SUBJECTS ---
+        function populateSettingsForm() {
+            document.getElementById('setting-focus-duration').value = state.settings.focusDuration;
+            document.getElementById('setting-short-break').value = state.settings.shortBreak;
+            document.getElementById('setting-long-break').value = state.settings.longBreak;
+            renderSubjectsList();
+        }
+
+        function renderSubjectsList() {
+            const container = document.getElementById('subjects-list-container');
+            container.innerHTML = '';
+
+            state.subjects.forEach((sub, idx) => {
+                const div = document.createElement('div');
+                div.className = 'py-2 flex items-center justify-between';
+                div.innerHTML = `
+                    <span class="text-industrial-200 font-bold">${sub}</span>
+                    <button onclick="deleteSubject(${idx})" class="text-rose-400 hover:text-rose-300 text-xs">REMOVE</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function openAddSubjectModal() {
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            document.getElementById('modal-add-subject').classList.remove('hidden');
+        }
+
+        function createNewSubject() {
+            const val = document.getElementById('new-subject-name-input').value.trim();
+            if (val && !state.subjects.includes(val)) {
+                state.subjects.push(val);
+                saveLocalStorage();
+                populateSubjectDropdown();
+                renderSubjectsList();
+            }
+            closeModal();
+        }
+
+        function deleteSubject(idx) {
+            if (state.subjects.length <= 1) return;
+            state.subjects.splice(idx, 1);
+            saveLocalStorage();
+            populateSubjectDropdown();
+            renderSubjectsList();
+        }
+
+        function populateSubjectDropdown() {
+            const sel = document.getElementById('subject-select');
+            sel.innerHTML = '';
+            state.subjects.forEach(sub => {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                opt.textContent = sub;
+                if (sub === state.selectedSubject) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }
+
+        function updateSelectedSubject(val) {
+            state.selectedSubject = val;
+        }
+
+        function updateTaskDescription(val) {
+            state.taskDescription = val;
+        }
+
+        function closeModal() {
+            document.getElementById('modal-backdrop').classList.add('hidden');
+            document.querySelectorAll('#modal-backdrop > div').forEach(d => d.classList.add('hidden'));
+        }
+
+        function saveAllSettings() {
+            state.settings.focusDuration = parseInt(document.getElementById('setting-focus-duration').value) || 25;
+            state.settings.shortBreak = parseInt(document.getElementById('setting-short-break').value) || 5;
+            state.settings.longBreak = parseInt(document.getElementById('setting-long-break').value) || 15;
+            saveLocalStorage();
+            setTimerMode('focus');
+            updateFooterStats();
+        }
+
+        function exportDataJson() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const dl = document.createElement('a');
+            dl.setAttribute("href", dataStr);
+            dl.setAttribute("download", `chacks_backup_${new Date().toISOString().slice(0,10)}.json`);
+            dl.click();
+        }
+
+        function confirmResetAllData() {
+            if (confirm("Reset all stored sessions and preferences?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // --- SPOTIFY INTEGRATION ---
+        function toggleSpotifyPanel() {
+            document.getElementById('spotify-drawer').classList.toggle('hidden');
+        }
+
+        function saveSpotifyUrl() {
+            const url = document.getElementById('spotify-url-input').value.trim();
+            if (url.includes('spotify.com')) {
+                const embedUrl = url.replace('open.spotify.com/', 'open.spotify.com/embed/');
+                state.settings.spotifyUrl = embedUrl;
+                saveLocalStorage();
+                renderSpotifyEmbed(embedUrl);
+            }
+        }
+
+        function renderSpotifyEmbed(url) {
+            document.getElementById('spotify-embed-container').innerHTML = `
+                <iframe src="${url}" width="100%" height="100%" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture" loading="lazy"></iframe>
+            `;
+        }
+
+        // Realtime Clock
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('system-time').textContent = now.toTimeString().split(' ')[0];
+        }, 1000);
+
+        // INITIALIZATION
+        window.onload = function() {
+            loadLocalStorage();
+            populateSubjectDropdown();
+            updateFooterStats();
+            setTimerMode('focus');
+            if (state.settings.spotifyUrl) renderSpotifyEmbed(state.settings.spotifyUrl);
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>

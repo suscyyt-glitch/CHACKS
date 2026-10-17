@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STACK — Premium Block Study Timer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        charcoal: {
+                            900: '#121212',
+                            800: '#1a1a1a',
+                            700: '#242424',
+                            600: '#2e2e2e',
+                            500: '#3f3f3f'
+                        },
+                        stone: {
+                            100: '#f7f6f3',
+                            200: '#e3e1da',
+                            300: '#c7c4b8',
+                            400: '#9e9a8d',
+                            500: '#757063'
+                        },
+                        vermilion: {
+                            DEFAULT: '#e64a19',
+                            hover: '#d84315',
+                            light: '#ff7043',
+                            dark: '#bf360c'
+                        },
+                        ivory: {
+                            DEFAULT: '#fbfbfa',
+                            muted: '#f0f0ed'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Courier', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        .font-mono-digits {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(150, 150, 150, 0.2);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(150, 150, 150, 0.4);
+        }
+
+        /* Tactile button feedback */
+        .tactile-btn {
+            transition: transform 0.08s ease, background-color 0.15s ease, border-color 0.15s ease;
+        }
+        .tactile-btn:active {
+            transform: translateY(1px) scale(0.99);
+        }
+
+        /* Block digit styling */
+        .block-digit {
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .light .block-digit {
+            background: linear-gradient(180deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.01) 100%);
+            box-shadow: inset 0 1px 0 rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body class="bg-charcoal-900 text-stone-200 dark:bg-charcoal-900 dark:text-stone-200 bg-stone-100 text-charcoal-900 antialiased h-screen flex overflow-hidden transition-colors duration-200">
+
+    <!-- Navigation Sidebar -->
+    <aside class="w-64 border-r border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white/60 backdrop-blur-md flex flex-col justify-between z-20">
+        <div>
+            <!-- App Branding -->
+            <div class="px-6 py-6 flex items-center justify-between border-b border-charcoal-700/40 dark:border-charcoal-700/40 border-stone-200/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-vermilion rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-vermilion/20 text-lg tracking-wider">
+                        S
+                    </div>
+                    <div>
+                        <h1 class="font-bold tracking-widest text-sm text-stone-100 dark:text-stone-100 text-charcoal-900">STACK</h1>
+                        <p class="text-[10px] tracking-wider text-stone-400 uppercase font-medium">Study Timer</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-4 space-y-1.5">
+                <button onclick="switchView('focus')" id="nav-focus" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-stone-200 bg-vermilion/10 text-vermilion border border-vermilion/20">
+                    <i data-lucide="timer" class="w-4 h-4"></i>
+                    <span>Focus</span>
+                </button>
+                <button onclick="switchView('activity')" id="nav-activity" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-stone-400 hover:text-stone-200 hover:bg-charcoal-700/30 dark:hover:bg-charcoal-700/30 hover:bg-stone-200/50">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                    <span>Activity</span>
+                </button>
+                <button onclick="switchView('history')" id="nav-history" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-stone-400 hover:text-stone-200 hover:bg-charcoal-700/30 dark:hover:bg-charcoal-700/30 hover:bg-stone-200/50">
+                    <i data-lucide="history" class="w-4 h-4"></i>
+                    <span>History</span>
+                </button>
+                <button onclick="switchView('settings')" id="nav-settings" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-stone-400 hover:text-stone-200 hover:bg-charcoal-700/30 dark:hover:bg-charcoal-700/30 hover:bg-stone-200/50">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span>Settings</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer / Quick Stats -->
+        <div class="p-4 border-t border-charcoal-700/40 dark:border-charcoal-700/40 border-stone-200/60">
+            <div class="bg-charcoal-700/20 dark:bg-charcoal-700/20 bg-stone-200/40 rounded-xl p-3.5 border border-charcoal-700/30 dark:border-charcoal-700/30 border-stone-300/40">
+                <div class="flex items-center justify-between text-xs mb-1">
+                    <span class="text-stone-400 font-medium">Today's Focus</span>
+                    <span id="sidebar-today-time" class="font-bold text-stone-200 dark:text-stone-200 text-charcoal-900 font-mono-digits">0m</span>
+                </div>
+                <div class="w-full bg-charcoal-900/60 dark:bg-charcoal-900/60 bg-stone-300/60 h-1.5 rounded-full overflow-hidden">
+                    <div id="sidebar-progress-bar" class="bg-vermilion h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="flex items-center justify-between text-[10px] text-stone-500 mt-2">
+                    <span id="sidebar-streak-count">🔥 0 day streak</span>
+                    <span id="sidebar-goal-text">Goal: 120m</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-charcoal-900 dark:bg-charcoal-900 bg-stone-100">
+        
+        <!-- Top Status Bar -->
+        <header class="h-16 px-8 border-b border-charcoal-700/40 dark:border-charcoal-700/40 border-stone-200/60 flex items-center justify-between bg-charcoal-800/20 dark:bg-charcoal-800/20 bg-white/30 backdrop-blur-sm z-10">
+            <div class="flex items-center gap-4">
+                <h2 id="view-title" class="text-base font-semibold tracking-wide text-stone-100 dark:text-stone-100 text-charcoal-900">Focus Workspace</h2>
+                <div class="h-4 w-px bg-charcoal-700 dark:bg-charcoal-700 bg-stone-300"></div>
+                <div id="current-active-badge" class="flex items-center gap-2 text-xs px-2.5 py-1 rounded-full bg-charcoal-800 border border-charcoal-700 text-stone-300">
+                    <span class="w-2 h-2 rounded-full bg-stone-500" id="status-dot"></span>
+                    <span id="status-text">Ready</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="toggleMusicPanel()" id="music-toggle-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-charcoal-700/60 dark:border-charcoal-700/60 border-stone-300 bg-charcoal-800/40 hover:bg-charcoal-700/50 text-xs font-medium transition-colors">
+                    <i data-lucide="music" class="w-3.5 h-3.5 text-vermilion"></i>
+                    <span class="hidden sm:inline">Spotify</span>
+                </button>
+                <button onclick="toggleTheme()" class="p-2 rounded-lg border border-charcoal-700/60 dark:border-charcoal-700/60 border-stone-300 bg-charcoal-800/40 hover:bg-charcoal-700/50 text-stone-300 transition-colors">
+                    <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- View Containers -->
+        <div class="flex-1 overflow-y-auto relative flex">
+            
+            <!-- FOCUS VIEW -->
+            <section id="view-focus" class="view-panel flex-1 flex flex-col lg:flex-row p-6 lg:p-10 gap-8 max-w-7xl mx-auto w-full items-start justify-center">
+                
+                <!-- Left/Center: Timer and Controls -->
+                <div class="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto space-y-8">
+                    
+                    <!-- Mode Selector Tabs -->
+                    <div class="inline-flex p-1 bg-charcoal-800/60 dark:bg-charcoal-800/60 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-xl shadow-sm">
+                        <button onclick="setTimerMode('focus')" id="mode-btn-focus" class="px-5 py-2 rounded-lg text-xs font-semibold transition-all bg-vermilion text-white shadow-sm">Focus</button>
+                        <button onclick="setTimerMode('shortBreak')" id="mode-btn-shortBreak" class="px-5 py-2 rounded-lg text-xs font-semibold transition-all text-stone-400 hover:text-stone-200">Short Break</button>
+                        <button onclick="setTimerMode('longBreak')" id="mode-btn-longBreak" class="px-5 py-2 rounded-lg text-xs font-semibold transition-all text-stone-400 hover:text-stone-200">Long Break</button>
+                    </div>
+
+                    <!-- Subject & Task Context Bar -->
+                    <div class="w-full bg-charcoal-800/30 dark:bg-charcoal-800/30 bg-white/80 border border-charcoal-700/40 dark:border-charcoal-700/40 border-stone-200/80 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <div class="w-8 h-8 rounded-lg bg-vermilion/10 text-vermilion flex items-center justify-center font-bold text-sm">
+                                <i data-lucide="book-open" class="w-4 h-4"></i>
+                            </div>
+                            <div class="flex-1 sm:flex-initial">
+                                <label class="text-[10px] text-stone-400 uppercase tracking-wider font-semibold block">Subject</label>
+                                <select id="subject-select" onchange="updateSelectedSubject(this.value)" class="bg-transparent text-sm font-semibold text-stone-200 dark:text-stone-200 text-charcoal-900 focus:outline-none cursor-pointer w-full py-0.5">
+                                    <!-- Dynamic Subjects -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="w-full sm:flex-1 sm:max-w-xs border-t sm:border-t-0 sm:border-l border-charcoal-700/40 dark:border-charcoal-700/40 border-stone-200 sm:pl-4 pt-3 sm:pt-0">
+                            <label class="text-[10px] text-stone-400 uppercase tracking-wider font-semibold block">Task Description (Optional)</label>
+                            <input type="text" id="task-input" placeholder="What are you working on?" oninput="updateTaskDescription(this.value)" class="w-full bg-transparent text-sm text-stone-200 dark:text-stone-200 text-charcoal-900 placeholder:text-stone-500 focus:outline-none py-0.5">
+                        </div>
+                    </div>
+
+                    <!-- Central Block Timer Display -->
+                    <div class="w-full bg-charcoal-800/50 dark:bg-charcoal-800/50 bg-white border border-charcoal-700/60 dark:border-charcoal-700/60 border-stone-200 rounded-3xl p-8 sm:p-12 shadow-xl flex flex-col items-center justify-center relative overflow-hidden">
+                        
+                        <!-- Subtle background grid or accent line -->
+                        <div class="absolute inset-0 bg-[radial-gradient(#ffffff05_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff05_1px,transparent_1px)] bg-[radial-gradient(#00000005_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+
+                        <!-- Timer Type Badge -->
+                        <div class="absolute top-4 left-6 flex items-center gap-2">
+                            <span id="timer-type-label" class="text-[11px] font-mono uppercase tracking-widest text-stone-400 px-2.5 py-1 rounded bg-charcoal-700/40 dark:bg-charcoal-700/40 bg-stone-200/60">Countdown</span>
+                        </div>
+
+                        <!-- Stopwatch / Countdown Switcher -->
+                        <div class="absolute top-4 right-6 flex items-center gap-1 bg-charcoal-900/40 dark:bg-charcoal-900/40 bg-stone-100 p-1 rounded-lg border border-charcoal-700/40 dark:border-charcoal-700/40 border-stone-200">
+                            <button onclick="setTimerEngineType('countdown')" id="engine-btn-countdown" class="px-2.5 py-1 text-[11px] font-medium rounded transition-colors bg-vermilion text-white">Countdown</button>
+                            <button onclick="setTimerEngineType('stopwatch')" id="engine-btn-stopwatch" class="px-2.5 py-1 text-[11px] font-medium rounded transition-colors text-stone-400 hover:text-stone-200">Stopwatch</button>
+                        </div>
+
+                        <!-- Oversized Segmented Digits -->
+                        <div class="my-6 flex items-center justify-center gap-3 sm:gap-4 font-mono-digits">
+                            <!-- Hours -->
+                            <div class="flex flex-col items-center">
+                                <div class="block-digit px-4 sm:px-6 py-4 sm:py-6 rounded-2xl border border-charcoal-600/40 dark:border-charcoal-600/40 border-stone-300 text-5xl sm:text-7xl font-extrabold tracking-tight text-stone-100 dark:text-stone-100 text-charcoal-900 shadow-inner" id="timer-hours">00</div>
+                                <span class="text-[10px] uppercase tracking-wider text-stone-500 font-semibold mt-2">Hours</span>
+                            </div>
+                            <span class="text-4xl sm:text-6xl font-bold text-stone-600 pb-6">:</span>
+                            <!-- Minutes -->
+                            <div class="flex flex-col items-center">
+                                <div class="block-digit px-4 sm:px-6 py-4 sm:py-6 rounded-2xl border border-charcoal-600/40 dark:border-charcoal-600/40 border-stone-300 text-5xl sm:text-7xl font-extrabold tracking-tight text-stone-100 dark:text-stone-100 text-charcoal-900 shadow-inner" id="timer-minutes">25</div>
+                                <span class="text-[10px] uppercase tracking-wider text-stone-500 font-semibold mt-2">Minutes</span>
+                            </div>
+                            <span class="text-4xl sm:text-6xl font-bold text-stone-600 pb-6">:</span>
+                            <!-- Seconds -->
+                            <div class="flex flex-col items-center">
+                                <div class="block-digit px-4 sm:px-6 py-4 sm:py-6 rounded-2xl border border-charcoal-600/40 dark:border-charcoal-600/40 border-stone-300 text-5xl sm:text-7xl font-extrabold tracking-tight text-stone-100 dark:text-stone-100 text-charcoal-900 shadow-inner" id="timer-seconds">00</div>
+                                <span class="text-[10px] uppercase tracking-wider text-stone-500 font-semibold mt-2">Seconds</span>
+                            </div>
+                        </div>
+
+                        <!-- Duration Presets (for Countdown mode) -->
+                        <div id="duration-presets" class="flex flex-wrap items-center justify-center gap-2 mb-6">
+                            <button onclick="setPresetDuration(15)" class="preset-btn px-3.5 py-1.5 rounded-lg text-xs font-medium border border-charcoal-700/60 dark:border-charcoal-700/60 border-stone-300 bg-charcoal-800/60 hover:bg-charcoal-700 text-stone-300 transition-colors">15m</button>
+                            <button onclick="setPresetDuration(25)" class="preset-btn px-3.5 py-1.5 rounded-lg text-xs font-medium border border-vermilion/40 bg-vermilion/10 text-vermilion transition-colors font-semibold" id="preset-25">25m</button>
+                            <button onclick="setPresetDuration(45)" class="preset-btn px-3.5 py-1.5 rounded-lg text-xs font-medium border border-charcoal-700/60 dark:border-charcoal-700/60 border-stone-300 bg-charcoal-800/60 hover:bg-charcoal-700 text-stone-300 transition-colors">45m</button>
+                            <button onclick="setPresetDuration(50)" class="preset-btn px-3.5 py-1.5 rounded-lg text-xs font-medium border border-charcoal-700/60 dark:border-charcoal-700/60 border-stone-300 bg-charcoal-800/60 hover:bg-charcoal-700 text-stone-300 transition-colors">50m</button>
+                            <button onclick="setPresetDuration(90)" class="preset-btn px-3.5 py-1.5 rounded-lg text-xs font-medium border border-charcoal-700/60 dark:border-charcoal-700/60 border-stone-300 bg-charcoal-800/60 hover:bg-charcoal-700 text-stone-300 transition-colors">90m</button>
+                            <button onclick="openCustomDurationModal()" class="preset-btn px-3.5 py-1.5 rounded-lg text-xs font-medium border border-charcoal-700/60 dark:border-charcoal-700/60 border-stone-300 bg-charcoal-800/60 hover:bg-charcoal-700 text-stone-400 transition-colors flex items-center gap-1">
+                                <i data-lucide="sliders" class="w-3 h-3"></i> Custom
+                            </button>
+                        </div>
+
+                        <!-- Action Control Buttons -->
+                        <div class="flex items-center gap-4 w-full max-w-sm justify-center">
+                            <button onclick="startTimer()" id="btn-start" class="tactile-btn flex-1 bg-vermilion hover:bg-vermilion-hover text-white font-semibold py-3.5 px-8 rounded-xl shadow-lg shadow-vermilion/25 flex items-center justify-center gap-2 text-sm tracking-wide">
+                                <i data-lucide="play" class="w-4 h-4 fill-current"></i> Start Session
+                            </button>
+                            <button onclick="pauseTimer()" id="btn-pause" class="tactile-btn hidden flex-1 bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3.5 px-8 rounded-xl shadow-lg shadow-amber-600/25 flex items-center justify-center gap-2 text-sm tracking-wide">
+                                <i data-lucide="pause" class="w-4 h-4 fill-current"></i> Pause
+                            </button>
+                            <button onclick="resumeTimer()" id="btn-resume" class="tactile-btn hidden flex-1 bg-vermilion hover:bg-vermilion-hover text-white font-semibold py-3.5 px-8 rounded-xl shadow-lg shadow-vermilion/25 flex items-center justify-center gap-2 text-sm tracking-wide">
+                                <i data-lucide="play" class="w-4 h-4 fill-current"></i> Resume
+                            </button>
+                            <button onclick="finishSessionModal()" id="btn-finish" class="tactile-btn hidden px-5 py-3.5 rounded-xl border border-charcoal-600 dark:border-charcoal-600 border-stone-300 bg-charcoal-700/50 hover:bg-charcoal-600 text-stone-300 font-semibold text-sm flex items-center justify-center gap-2 transition-colors">
+                                <i data-lucide="square" class="w-4 h-4 fill-current"></i> Finish
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Right Side: Spotify Music Companion Panel (Collapsible) -->
+                <div id="spotify-panel" class="w-full lg:w-80 bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-5 shadow-lg flex flex-col hidden">
+                    <div class="flex items-center justify-between pb-4 border-b border-charcoal-700/40 dark:border-charcoal-700/40 border-stone-200">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                                <i data-lucide="music" class="w-3.5 h-3.5"></i>
+                            </div>
+                            <h3 class="text-xs font-semibold tracking-wide uppercase text-stone-300">Spotify Focus Companion</h3>
+                        </div>
+                        <button onclick="toggleMusicPanel()" class="text-stone-400 hover:text-stone-200 p-1">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div class="py-4 space-y-4">
+                        <p class="text-xs text-stone-400 leading-relaxed">Paste any Spotify playlist, album, or track URL to embed player:</p>
+                        <div class="flex gap-2">
+                            <input type="text" id="spotify-url-input" placeholder="https://open.spotify.com/playlist/..." class="flex-1 bg-charcoal-900/60 dark:bg-charcoal-900/60 bg-stone-100 border border-charcoal-700 dark:border-charcoal-700 border-stone-300 rounded-lg px-3 py-2 text-xs text-stone-200 focus:outline-none">
+                            <button onclick="saveSpotifyUrl()" class="px-3 py-2 bg-charcoal-700 hover:bg-charcoal-600 text-stone-200 text-xs font-semibold rounded-lg transition-colors">Set</button>
+                        </div>
+
+                        <!-- Embed container -->
+                        <div id="spotify-embed-container" class="w-full h-80 rounded-xl overflow-hidden bg-charcoal-900/80 border border-charcoal-700/50 flex items-center justify-center text-stone-500 text-xs text-center p-4">
+                            No Spotify link configured. Default lofi beats or study playlist URL can be added.
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ACTIVITY VIEW -->
+            <section id="view-activity" class="view-panel hidden flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full space-y-8">
+                
+                <!-- Summary Metrics Row -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-5 shadow-sm">
+                        <div class="flex items-center justify-between text-stone-400 mb-2">
+                            <span class="text-xs font-medium uppercase tracking-wider">Total Study Hours</span>
+                            <i data-lucide="clock" class="w-4 h-4 text-vermilion"></i>
+                        </div>
+                        <div class="text-3xl font-extrabold font-mono-digits text-stone-100 dark:text-stone-100 text-charcoal-900" id="stat-total-hours">0.0h</div>
+                        <div class="text-[11px] text-stone-500 mt-1">Across all recorded sessions</div>
+                    </div>
+
+                    <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-5 shadow-sm">
+                        <div class="flex items-center justify-between text-stone-400 mb-2">
+                            <span class="text-xs font-medium uppercase tracking-wider">Completed Sessions</span>
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+                        </div>
+                        <div class="text-3xl font-extrabold font-mono-digits text-stone-100 dark:text-stone-100 text-charcoal-900" id="stat-total-sessions">0</div>
+                        <div class="text-[11px] text-stone-500 mt-1">Focus intervals finished</div>
+                    </div>
+
+                    <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-5 shadow-sm">
+                        <div class="flex items-center justify-between text-stone-400 mb-2">
+                            <span class="text-xs font-medium uppercase tracking-wider">Current Streak</span>
+                            <i data-lucide="flame" class="w-4 h-4 text-amber-500"></i>
+                        </div>
+                        <div class="text-3xl font-extrabold font-mono-digits text-stone-100 dark:text-stone-100 text-charcoal-900" id="stat-current-streak">0 days</div>
+                        <div class="text-[11px] text-stone-500 mt-1" id="stat-longest-streak">Longest: 0 days</div>
+                    </div>
+
+                    <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-5 shadow-sm">
+                        <div class="flex items-center justify-between text-stone-400 mb-2">
+                            <span class="text-xs font-medium uppercase tracking-wider">Daily Goal Met</span>
+                            <i data-lucide="award" class="w-4 h-4 text-indigo-400"></i>
+                        </div>
+                        <div class="text-3xl font-extrabold font-mono-digits text-stone-100 dark:text-stone-100 text-charcoal-900" id="stat-goal-days">0 days</div>
+                        <div class="text-[11px] text-stone-500 mt-1">Goal reached successfully</div>
+                    </div>
+                </div>
+
+                <!-- GitHub-Style 365-Day Study Heatmap -->
+                <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-sm font-semibold text-stone-100 dark:text-stone-100 text-charcoal-900">Study Heatmap</h3>
+                            <p class="text-xs text-stone-400">Daily focus intensity over the past year (365 days)</p>
+                        </div>
+                        <div class="flex items-center gap-2 text-[11px] text-stone-400">
+                            <span>Less</span>
+                            <div class="flex gap-1">
+                                <div class="w-3 h-3 rounded-sm bg-charcoal-700/60 dark:bg-charcoal-700/60 bg-stone-200"></div>
+                                <div class="w-3 h-3 rounded-sm bg-vermilion/30"></div>
+                                <div class="w-3 h-3 rounded-sm bg-vermilion/60"></div>
+                                <div class="w-3 h-3 rounded-sm bg-vermilion/90"></div>
+                                <div class="w-3 h-3 rounded-sm bg-vermilion"></div>
+                            </div>
+                            <span>More</span>
+                        </div>
+                    </div>
+
+                    <!-- Heatmap Grid Container -->
+                    <div class="overflow-x-auto pb-2">
+                        <div id="heatmap-grid" class="inline-grid grid-rows-7 grid-flow-col gap-1.5 min-w-[720px]">
+                            <!-- Generated dynamically via JS -->
+                        </div>
+                    </div>
+                    <div id="heatmap-selected-day-info" class="mt-4 pt-4 border-t border-charcoal-700/40 dark:border-charcoal-700/40 border-stone-200 text-xs text-stone-400 flex items-center justify-between">
+                        <span>Click any day square to inspect sessions.</span>
+                        <span id="heatmap-selected-date-detail" class="font-medium text-stone-300"></span>
+                    </div>
+                </div>
+
+                <!-- Weekly & Subject Breakdown Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Weekly Bar Chart -->
+                    <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-6 shadow-sm">
+                        <h3 class="text-sm font-semibold text-stone-100 dark:text-stone-100 text-charcoal-900 mb-1">Weekly Focus Activity</h3>
+                        <p class="text-xs text-stone-400 mb-6">Study minutes for the current week</p>
+                        <div id="weekly-chart-container" class="h-48 flex items-end justify-between gap-3 pt-6 px-2">
+                            <!-- Generated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Subject Breakdown -->
+                    <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-6 shadow-sm">
+                        <h3 class="text-sm font-semibold text-stone-100 dark:text-stone-100 text-charcoal-900 mb-1">Subject Breakdown</h3>
+                        <p class="text-xs text-stone-400 mb-6">Distribution of study time by subject</p>
+                        <div id="subject-breakdown-container" class="space-y-4">
+                            <!-- Generated via JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- HISTORY VIEW -->
+            <section id="view-history" class="view-panel hidden flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full space-y-6">
+                
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-charcoal-700/40 dark:border-charcoal-700/40 border-stone-200">
+                    <div>
+                        <h3 class="text-base font-semibold text-stone-100 dark:text-stone-100 text-charcoal-900">Session History</h3>
+                        <p class="text-xs text-stone-400">Chronological log of all recorded study intervals</p>
+                    </div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <select id="history-filter-subject" onchange="renderHistory()" class="bg-charcoal-800 border border-charcoal-700 rounded-lg px-3 py-1.5 text-xs text-stone-300 focus:outline-none">
+                            <option value="all">All Subjects</option>
+                        </select>
+                        <select id="history-filter-status" onchange="renderHistory()" class="bg-charcoal-800 border border-charcoal-700 rounded-lg px-3 py-1.5 text-xs text-stone-300 focus:outline-none">
+                            <option value="all">All Statuses</option>
+                            <option value="completed">Completed</option>
+                            <option value="manual">Manual Finish</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- History Table / List -->
+                <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-charcoal-700/40 dark:border-charcoal-700/40 border-stone-200 text-[11px] font-semibold text-stone-400 uppercase tracking-wider bg-charcoal-800/20">
+                                    <th class="py-3.5 px-6">Date & Time</th>
+                                    <th class="py-3.5 px-6">Subject</th>
+                                    <th class="py-3.5 px-6">Task Description</th>
+                                    <th class="py-3.5 px-6">Duration</th>
+                                    <th class="py-3.5 px-6">Status</th>
+                                    <th class="py-3.5 px-6 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body" class="divide-y divide-charcoal-700/30 dark:divide-charcoal-700/30 divide-stone-200 text-xs">
+                                <!-- Generated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="history-empty-state" class="hidden p-12 text-center flex flex-col items-center justify-center space-y-3">
+                        <div class="w-12 h-12 rounded-full bg-charcoal-700/40 text-stone-400 flex items-center justify-center">
+                            <i data-lucide="history" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-medium text-stone-300">No study history recorded yet</p>
+                        <p class="text-xs text-stone-500 max-w-sm">Complete your first focus session to start populating your study timeline and analytics.</p>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- SETTINGS VIEW -->
+            <section id="view-settings" class="view-panel hidden flex-1 p-6 lg:p-10 max-w-4xl mx-auto w-full space-y-8">
+                
+                <div>
+                    <h3 class="text-base font-semibold text-stone-100 dark:text-stone-100 text-charcoal-900">Application Settings</h3>
+                    <p class="text-xs text-stone-400">Configure timer durations, subjects, sound, haptics, and data backups</p>
+                </div>
+
+                <!-- Settings Cards Grid -->
+                <div class="space-y-6">
+                    
+                    <!-- Timer Durations Card -->
+                    <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-6 shadow-sm space-y-4">
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-vermilion">Timer & Durations</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                            <div>
+                                <label class="text-xs text-stone-400 font-medium block mb-1">Focus Duration (min)</label>
+                                <input type="number" id="setting-focus-duration" min="1" max="180" class="w-full bg-charcoal-900/60 dark:bg-charcoal-900/60 bg-stone-100 border border-charcoal-700 dark:border-charcoal-700 border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-200 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="text-xs text-stone-400 font-medium block mb-1">Short Break (min)</label>
+                                <input type="number" id="setting-short-break" min="1" max="60" class="w-full bg-charcoal-900/60 dark:bg-charcoal-900/60 bg-stone-100 border border-charcoal-700 dark:border-charcoal-700 border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-200 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="text-xs text-stone-400 font-medium block mb-1">Long Break (min)</label>
+                                <input type="number" id="setting-long-break" min="1" max="120" class="w-full bg-charcoal-900/60 dark:bg-charcoal-900/60 bg-stone-100 border border-charcoal-700 dark:border-charcoal-700 border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-200 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-stone-400 font-medium block mb-1">Daily Study Goal (minutes)</label>
+                            <input type="number" id="setting-daily-goal" min="15" max="1440" class="w-full sm:w-1/3 bg-charcoal-900/60 dark:bg-charcoal-900/60 bg-stone-100 border border-charcoal-700 dark:border-charcoal-700 border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-200 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Subjects Management Card -->
+                    <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-6 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-semibold uppercase tracking-wider text-vermilion">Subjects Management</h4>
+                            <button onclick="openAddSubjectModal()" class="px-3 py-1.5 bg-vermilion hover:bg-vermilion-hover text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Subject
+                            </button>
+                        </div>
+                        <div id="subjects-list-container" class="divide-y divide-charcoal-700/40 pt-2">
+                            <!-- Rendered via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Sounds & Audio Card -->
+                    <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-6 shadow-sm space-y-4">
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-vermilion">Sound & Completion Alerts</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                            <div>
+                                <label class="text-xs text-stone-400 font-medium block mb-1">Completion Sound</label>
+                                <select id="setting-sound-type" class="w-full bg-charcoal-900/60 dark:bg-charcoal-900/60 bg-stone-100 border border-charcoal-700 dark:border-charcoal-700 border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-200 focus:outline-none">
+                                    <option value="chime">Soft Single Chime</option>
+                                    <option value="double">Short Double Tone</option>
+                                    <option value="gentle">Deep Gentle Tone</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center justify-between pt-6">
+                                <span class="text-xs text-stone-300 font-medium">Enable Browser Notifications</span>
+                                <input type="checkbox" id="setting-notifications" onchange="toggleNotificationSetting(this.checked)" class="w-4 h-4 accent-vermilion cursor-pointer">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Backup & Reset Card -->
+                    <div class="bg-charcoal-800/40 dark:bg-charcoal-800/40 bg-white border border-charcoal-700/50 dark:border-charcoal-700/50 border-stone-200 rounded-2xl p-6 shadow-sm space-y-4">
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-vermilion">Data Backup & Storage</h4>
+                        <p class="text-xs text-stone-400 leading-relaxed">All study sessions, history, and preferences are stored securely in your browser's local storage.</p>
+                        <div class="flex flex-wrap gap-3 pt-2">
+                            <button onclick="exportDataJson()" class="px-4 py-2 bg-charcoal-700 hover:bg-charcoal-600 text-stone-200 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Backup (JSON)
+                            </button>
+                            <label class="px-4 py-2 bg-charcoal-700 hover:bg-charcoal-600 text-stone-200 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 cursor-pointer">
+                                <i data-lucide="upload" class="w-3.5 h-3.5"></i> Import Backup
+                                <input type="file" id="import-file-input" accept=".json" onchange="importDataJson(event)" class="hidden">
+                            </label>
+                            <button onclick="confirmResetAllData()" class="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 ml-auto">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Reset All Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Save Settings Button -->
+                    <div class="flex justify-end pt-2">
+                        <button onclick="saveAllSettings()" class="px-6 py-3 bg-vermilion hover:bg-vermilion-hover text-white text-xs font-semibold rounded-xl shadow-lg shadow-vermilion/20 transition-colors">
+                            Save Preferences
+                        </button>
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+    </main>
+
+    <!-- CUSTOM MODAL DIALOGS -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        
+        <!-- Custom Duration Modal -->
+        <div id="modal-custom-duration" class="bg-charcoal-800 border border-charcoal-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl hidden space-y-4">
+            <h3 class="text-sm font-semibold text-stone-100">Set Custom Duration</h3>
+            <div>
+                <label class="text-xs text-stone-400 block mb-1">Minutes</label>
+                <input type="number" id="custom-minutes-input" min="1" max="300" value="30" class="w-full bg-charcoal-900 border border-charcoal-700 rounded-xl px-3 py-2 text-sm text-stone-200 focus:outline-none">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeModal()" class="px-4 py-2 bg-charcoal-700 hover:bg-charcoal-600 text-stone-300 text-xs font-semibold rounded-xl">Cancel</button>
+                <button onclick="applyCustomDuration()" class="px-4 py-2 bg-vermilion hover:bg-vermilion-hover text-white text-xs font-semibold rounded-xl">Apply</button>
+            </div>
+        </div>
+
+        <!-- Session Finish / Save Modal -->
+        <div id="modal-session-finish" class="bg-charcoal-800 border border-charcoal-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl hidden space-y-4">
+            <h3 class="text-sm font-semibold text-stone-100">Finish Study Session?</h3>
+            <p id="modal-finish-desc" class="text-xs text-stone-400">Do you want to save the time studied so far or discard this session?</p>
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="discardActiveSession()" class="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold rounded-xl">Discard</button>
+                <button onclick="saveActiveSessionAndFinish()" class="px-4 py-2 bg-vermilion hover:bg-vermilion-hover text-white text-xs font-semibold rounded-xl">Save & Finish</button>
+            </div>
+        </div>
+
+        <!-- Add Subject Modal -->
+        <div id="modal-add-subject" class="bg-charcoal-800 border border-charcoal-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl hidden space-y-4">
+            <h3 class="text-sm font-semibold text-stone-100">Add New Subject</h3>
+            <div>
+                <label class="text-xs text-stone-400 block mb-1">Subject Name</label>
+                <input type="text" id="new-subject-name-input" placeholder="e.g. Economics" class="w-full bg-charcoal-900 border border-charcoal-700 rounded-xl px-3 py-2 text-sm text-stone-200 focus:outline-none">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeModal()" class="px-4 py-2 bg-charcoal-700 hover:bg-charcoal-600 text-stone-300 text-xs font-semibold rounded-xl">Cancel</button>
+                <button onclick="createNewSubject()" class="px-4 py-2 bg-vermilion hover:bg-vermilion-hover text-white text-xs font-semibold rounded-xl">Add Subject</button>
+            </div>
+        </div>
+
+        <!-- Reset Confirmation Modal -->
+        <div id="modal-reset-confirm" class="bg-charcoal-800 border border-charcoal-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl hidden space-y-4">
+            <h3 class="text-sm font-semibold text-rose-400">Reset All Data?</h3>
+            <p class="text-xs text-stone-400">This will permanently delete all your study history, custom subjects, and reset your statistics. This action cannot be undone.</p>
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeModal()" class="px-4 py-2 bg-charcoal-700 hover:bg-charcoal-600 text-stone-300 text-xs font-semibold rounded-xl">Cancel</button>
+                <button onclick="executeResetAllData()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl">Yes, Reset Everything</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // --- State Management & Persistence ---
+        const DEFAULT_SETTINGS = {
+            focusDuration: 25, // minutes
+            shortBreak: 5,
+            longBreak: 15,
+            dailyGoal: 120, // minutes
+            soundType: 'chime',
+            soundVolume: 0.7,
+            notifications: false,
+            spotifyUrl: '',
+            theme: 'dark'
+        };
+
+        const DEFAULT_SUBJECTS = [
+            'Mathematics',
+            'Physics',
+            'Chemistry',
+            'Computer Science',
+            'Other'
+        ];
+
+        let state = {
+            settings: { ...DEFAULT_SETTINGS },
+            subjects: [ ...DEFAULT_SUBJECTS ],
+            sessions: [], // Array of session objects
+            activeSession: null, // { mode, subject, task, durationTotal, timeRemaining, startTime, isRunning, engineType }
+            currentView: 'focus',
+            timerMode: 'focus', // 'focus', 'shortBreak', 'longBreak'
+            timerEngineType: 'countdown', // 'countdown', 'stopwatch'
+            selectedSubject: DEFAULT_SUBJECTS[0],
+            taskDescription: '',
+            timeRemaining: 25 * 60, // in seconds
+            stopwatchElapsed: 0, // in seconds
+            isTimerRunning: false,
+            timerInterval: null
+        };
+
+        // Load data from localStorage safely
+        function loadLocalStorage() {
+            try {
+                const savedSettings = localStorage.getItem('stack_settings');
+                if (savedSettings) state.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) };
+
+                const savedSubjects = localStorage.getItem('stack_subjects');
+                if (savedSubjects) state.subjects = JSON.parse(savedSubjects);
+
+                const savedSessions = localStorage.getItem('stack_sessions');
+                if (savedSessions) state.sessions = JSON.parse(savedSessions);
+
+                const savedActive = localStorage.getItem('stack_active_session');
+                if (savedActive) {
+                    const parsedActive = JSON.parse(savedActive);
+                    // Check absolute timestamp drift for active countdowns
+                    if (parsedActive && parsedActive.isRunning) {
+                        const now = Date.now();
+                        const elapsedSec = Math.floor((now - parsedActive.lastTimestamp) / 1000);
+                        if (parsedActive.engineType === 'countdown') {
+                            parsedActive.timeRemaining = Math.max(0, parsedActive.timeRemaining - elapsedSec);
+                            if (parsedActive.timeRemaining === 0) {
+                                // Completed while inactive
+                                handleCompletedInactiveSession(parsedActive);
+                                state.activeSession = null;
+                            } else {
+                                parsedActive.lastTimestamp = now;
+                                state.activeSession = parsedActive;
+                                resumeActiveSessionState();
+                            }
+                        } else {
+                            // Stopwatch
+                            parsedActive.stopwatchElapsed += elapsedSec;
+                            parsedActive.lastTimestamp = now;
+                            state.activeSession = parsedActive;
+                            resumeActiveSessionState();
+                        }
+                    } else if (parsedActive) {
+                        state.activeSession = parsedActive;
+                        restoreActiveSessionUI();
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading local storage:", e);
+                // Fallback to defaults
+            }
+        }
+
+        function saveLocalStorage() {
+            try {
+                localStorage.setItem('stack_settings', JSON.stringify(state.settings));
+                localStorage.setItem('stack_subjects', JSON.stringify(state.subjects));
+                localStorage.setItem('stack_sessions', JSON.stringify(state.sessions));
+                if (state.activeSession) {
+                    localStorage.setItem('stack_active_session', JSON.stringify(state.activeSession));
+                } else {
+                    localStorage.removeItem('stack_active_session');
+                }
+            } catch (e) {
+                console.error("Error saving local storage:", e);
+            }
+        }
+
+        // --- Audio Synthesizer (Web Audio API) ---
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playCompletionSound() {
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                const type = state.settings.soundType || 'chime';
+
+                if (type === 'chime') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 1.5);
+                } else if (type === 'double') {
+                    [0, 0.25].forEach((delay, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(idx === 0 ? 440 : 659.25, now + delay);
+                        gain.gain.setValueAtTime(0.3, now + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.6);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + delay);
+                        osc.stop(now + delay + 0.6);
+                    });
+                } else if (type === 'gentle') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(261.63, now); // C4
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 2.0);
+                }
+            } catch (e) {
+                console.debug("Audio play blocked or unavailable:", e);
+            }
+        }
+
+        // --- Haptics (Best effort) ---
+        function triggerHaptics() {
+            if (navigator && typeof navigator.vibrate === 'function') {
+                try {
+                    navigator.vibrate([100, 50, 100]);
+                } catch (e) {
+                    // Ignore unsupported
+                }
+            }
+        }
+
+        // --- Notifications ---
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission !== 'granted') {
+                Notification.requestPermission();
+            }
+        }
+
+        function sendNotification(title, body) {
+            if (state.settings.notifications && 'Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification(title, { body, icon: '' });
+                } catch (e) {
+                    console.debug("Notification failed:", e);
+                }
+            }
+        }
+
+        // --- Navigation & Views ---
+        function switchView(viewName) {
+            state.currentView = viewName;
+            document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+            // Update nav styles
+            ['focus', 'activity', 'history', 'settings'].forEach(v => {
+                const btn = document.getElementById(`nav-${v}`);
+                if (v === viewName) {
+                    btn.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-stone-200 bg-vermilion/10 text-vermilion border border-vermilion/20";
+                } else {
+                    btn.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-stone-400 hover:text-stone-200 hover:bg-charcoal-700/30 dark:hover:bg-charcoal-700/30 hover:bg-stone-200/50";
+                }
+            });
+
+            const titles = {
+                focus: 'Focus Workspace',
+                activity: 'Study Activity & Analytics',
+                history: 'Session History Log',
+                settings: 'Application Settings'
+            };
+            document.getElementById('view-title').textContent = titles[viewName];
+
+            if (viewName === 'activity') {
+                renderActivityView();
+            } else if (viewName === 'history') {
+                renderHistory();
+            } else if (viewName === 'settings') {
+                populateSettingsForm();
+            }
+        }
+
+        // --- Theme Toggle ---
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            state.settings.theme = isDark ? 'dark' : 'light';
+            if (!isDark) {
+                document.documentElement.classList.add('light');
+            } else {
+                document.documentElement.classList.remove('light');
+            }
+            saveLocalStorage();
+        }
+
+        // --- Timer Engine & Logic ---
+        function setTimerMode(mode) {
+            if (state.isTimerRunning) return; // Don't switch while running
+            state.timerMode = mode;
+            ['focus', 'shortBreak', 'longBreak'].forEach(m => {
+                const btn = document.getElementById(`mode-btn-${m}`);
+                if (m === mode) {
+                    btn.className = "px-5 py-2 rounded-lg text-xs font-semibold transition-all bg-vermilion text-white shadow-sm";
+                } else {
+                    btn.className = "px-5 py-2 rounded-lg text-xs font-semibold transition-all text-stone-400 hover:text-stone-200";
+                }
+            });
+
+            if (mode === 'focus') {
+                state.timeRemaining = state.settings.focusDuration * 60;
+            } else if (mode === 'shortBreak') {
+                state.timeRemaining = state.settings.shortBreak * 60;
+            } else if (mode === 'longBreak') {
+                state.timeRemaining = state.settings.longBreak * 60;
+            }
+            updateTimerDisplay();
+        }
+
+        function setTimerEngineType(engine) {
+            if (state.isTimerRunning) return;
+            state.timerEngineType = engine;
+            ['countdown', 'stopwatch'].forEach(e => {
+                const btn = document.getElementById(`engine-btn-${e}`);
+                if (e === engine) {
+                    btn.className = "px-2.5 py-1 text-[11px] font-medium rounded transition-colors bg-vermilion text-white";
+                } else {
+                    btn.className = "px-2.5 py-1 text-[11px] font-medium rounded transition-colors text-stone-400 hover:text-stone-200";
+                }
+            });
+
+            const presets = document.getElementById('duration-presets');
+            const typeLabel = document.getElementById('timer-type-label');
+            if (engine === 'countdown') {
+                presets.classList.remove('hidden');
+                typeLabel.textContent = 'Countdown';
+                setTimerMode(state.timerMode);
+            } else {
+                presets.classList.add('hidden');
+                typeLabel.textContent = 'Stopwatch';
+                state.stopwatchElapsed = 0;
+                updateTimerDisplay();
+            }
+        }
+
+        function setPresetDuration(minutes) {
+            if (state.isTimerRunning) return;
+            if (state.timerMode === 'focus') {
+                state.settings.focusDuration = minutes;
+            } else if (state.timerMode === 'shortBreak') {
+                state.settings.shortBreak = minutes;
+            } else if (state.timerMode === 'longBreak') {
+                state.settings.longBreak = minutes;
+            }
+            state.timeRemaining = minutes * 60;
+            updateTimerDisplay();
+        }
+
+        function updateSelectedSubject(sub) {
+            state.selectedSubject = sub;
+        }
+
+        function updateTaskDescription(desc) {
+            state.taskDescription = desc;
+        }
+
+        function updateTimerDisplay() {
+            let totalSec = state.timerEngineType === 'countdown' ? state.timeRemaining : state.stopwatchElapsed;
+            const hours = Math.floor(totalSec / 3600);
+            const minutes = Math.floor((totalSec % 3600) / 60);
+            const seconds = totalSec % 60;
+
+            document.getElementById('timer-hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('timer-minutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('timer-seconds').textContent = String(seconds).padStart(2, '0');
+        }
+
+        function startTimer() {
+            getAudioContext(); // Initialize audio context on user interaction
+            state.isTimerRunning = true;
+            const startTime = Date.now();
+
+            state.activeSession = {
+                mode: state.timerMode,
+                subject: state.selectedSubject,
+                task: state.taskDescription,
+                engineType: state.timerEngineType,
+                durationTotal: state.timerEngineType === 'countdown' ? state.timeRemaining : 0,
+                timeRemaining: state.timeRemaining,
+                stopwatchElapsed: state.stopwatchElapsed,
+                startTime: startTime,
+                lastTimestamp: startTime,
+                isRunning: true
+            };
+
+            document.getElementById('btn-start').classList.add('hidden');
+            document.getElementById('btn-pause').classList.remove('hidden');
+            document.getElementById('btn-finish').classList.remove('hidden');
+            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+            document.getElementById('status-text').textContent = state.timerMode === 'focus' ? 'Focusing...' : 'On Break';
+
+            // Start interval using absolute timestamp accuracy
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.timerInterval = setInterval(() => {
+                const now = Date.now();
+                const deltaSec = Math.floor((now - state.activeSession.lastTimestamp) / 1000);
+                if (deltaSec >= 1) {
+                    state.activeSession.lastTimestamp = now;
+                    if (state.timerEngineType === 'countdown') {
+                        state.activeSession.timeRemaining = Math.max(0, state.activeSession.timeRemaining - deltaSec);
+                        state.timeRemaining = state.activeSession.timeRemaining;
+                        updateTimerDisplay();
+
+                        if (state.timeRemaining === 0) {
+                            completeActiveSession();
+                        }
+                    } else {
+                        state.activeSession.stopwatchElapsed += deltaSec;
+                        state.stopwatchElapsed = state.activeSession.stopwatchElapsed;
+                        updateTimerDisplay();
+                    }
+                    saveLocalStorage();
+                }
+            }, 500);
+
+            saveLocalStorage();
+        }
+
+        function pauseTimer() {
+            if (!state.isTimerRunning) return;
+            state.isTimerRunning = false;
+            clearInterval(state.timerInterval);
+            if (state.activeSession) state.activeSession.isRunning = false;
+
+            document.getElementById('btn-pause').classList.add('hidden');
+            document.getElementById('btn-resume').classList.remove('hidden');
+            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-amber-500";
+            document.getElementById('status-text').textContent = 'Paused';
+            saveLocalStorage();
+        }
+
+        function resumeTimer() {
+            state.isTimerRunning = true;
+            if (state.activeSession) {
+                state.activeSession.isRunning = true;
+                state.activeSession.lastTimestamp = Date.now();
+            }
+
+            document.getElementById('btn-resume').classList.add('hidden');
+            document.getElementById('btn-pause').classList.remove('hidden');
+            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+            document.getElementById('status-text').textContent = state.timerMode === 'focus' ? 'Focusing...' : 'On Break';
+
+            state.timerInterval = setInterval(() => {
+                const now = Date.now();
+                const deltaSec = Math.floor((now - state.activeSession.lastTimestamp) / 1000);
+                if (deltaSec >= 1) {
+                    state.activeSession.lastTimestamp = now;
+                    if (state.timerEngineType === 'countdown') {
+                        state.activeSession.timeRemaining = Math.max(0, state.activeSession.timeRemaining - deltaSec);
+                        state.timeRemaining = state.activeSession.timeRemaining;
+                        updateTimerDisplay();
+
+                        if (state.timeRemaining === 0) {
+                            completeActiveSession();
+                        }
+                    } else {
+                        state.activeSession.stopwatchElapsed += deltaSec;
+                        state.stopwatchElapsed = state.activeSession.stopwatchElapsed;
+                        updateTimerDisplay();
+                    }
+                    saveLocalStorage();
+                }
+            }, 500);
+
+            saveLocalStorage();
+        }
+
+        function finishSessionModal() {
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            document.getElementById('modal-session-finish').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-backdrop').classList.add('hidden');
+            document.querySelectorAll('#modal-backdrop > div').forEach(el => el.classList.add('hidden'));
+        }
+
+        function discardActiveSession() {
+            clearInterval(state.timerInterval);
+            state.isTimerRunning = false;
+            state.activeSession = null;
+            closeModal();
+            resetTimerUI();
+            saveLocalStorage();
+        }
+
+        function saveActiveSessionAndFinish() {
+            clearInterval(state.timerInterval);
+            state.isTimerRunning = false;
+
+            if (state.activeSession) {
+                const sessionRecord = createSessionRecordObject(state.activeSession, 'manual');
+                if (sessionRecord) {
+                    state.sessions.unshift(sessionRecord);
+                }
+            }
+
+            state.activeSession = null;
+            closeModal();
+            resetTimerUI();
+            saveLocalStorage();
+            updateSidebarStats();
+            playCompletionSound();
+            triggerHaptics();
+        }
+
+        function completeActiveSession() {
+            clearInterval(state.timerInterval);
+            state.isTimerRunning = false;
+
+            if (state.activeSession) {
+                const sessionRecord = createSessionRecordObject(state.activeSession, 'completed');
+                if (sessionRecord) {
+                    state.sessions.unshift(sessionRecord);
+                }
+            }
+
+            state.activeSession = null;
+            resetTimerUI();
+            saveLocalStorage();
+            updateSidebarStats();
+            playCompletionSound();
+            triggerHaptics();
+            sendNotification("Session Complete!", "Great focus session finished successfully.");
+        }
+
+        function handleCompletedInactiveSession(parsedActive) {
+            const sessionRecord = createSessionRecordObject(parsedActive, 'completed');
+            if (sessionRecord) {
+                state.sessions.unshift(sessionRecord);
+                saveLocalStorage();
+            }
+        }
+
+        function createSessionRecordObject(active, status) {
+            // Exclude breaks from focus study totals
+            if (active.mode !== 'focus') return null;
+
+            const endTime = Date.now();
+            const startTime = active.startTime || (endTime - (active.durationTotal * 1000));
+            let actualDurationSec = 0;
+
+            if (active.engineType === 'countdown') {
+                actualDurationSec = active.durationTotal - active.timeRemaining;
+            } else {
+                actualDurationSec = active.stopwatchElapsed;
+            }
+
+            if (actualDurationSec < 10) return null; // ignore negligible sessions
+
+            return {
+                id: 'sess_' + Math.random().toString(36).substring(2, 9),
+                startTime: startTime,
+                endTime: endTime,
+                subject: active.subject,
+                task: active.task || '',
+                durationSec: actualDurationSec,
+                mode: active.mode,
+                status: status // 'completed' or 'manual'
+            };
+        }
+
+        function resetTimerUI() {
+            state.isTimerRunning = false;
+            document.getElementById('btn-start').classList.remove('hidden');
+            document.getElementById('btn-pause').classList.add('hidden');
+            document.getElementById('btn-resume').classList.add('hidden');
+            document.getElementById('btn-finish').classList.add('hidden');
+            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-stone-500";
+            document.getElementById('status-text').textContent = 'Ready';
+            setTimerMode(state.timerMode);
+        }
+
+        function resumeActiveSessionState() {
+            state.isTimerRunning = true;
+            state.timerMode = state.activeSession.mode;
+            state.timerEngineType = state.activeSession.engineType;
+            state.selectedSubject = state.activeSession.subject;
+            state.taskDescription = state.activeSession.task;
+            state.timeRemaining = state.activeSession.timeRemaining;
+            state.stopwatchElapsed = state.activeSession.stopwatchElapsed;
+
+            document.getElementById('task-input').value = state.activeSession.task;
+            document.getElementById('subject-select').value = state.activeSession.subject;
+
+            if (state.activeSession.isRunning) {
+                document.getElementById('btn-start').classList.add('hidden');
+                document.getElementById('btn-pause').classList.remove('hidden');
+                document.getElementById('btn-finish').classList.remove('hidden');
+                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                document.getElementById('status-text').textContent = 'Focusing...';
+
+                state.timerInterval = setInterval(() => {
+                    const now = Date.now();
+                    const deltaSec = Math.floor((now - state.activeSession.lastTimestamp) / 1000);
+                    if (deltaSec >= 1) {
+                        state.activeSession.lastTimestamp = now;
+                        if (state.timerEngineType === 'countdown') {
+                            state.activeSession.timeRemaining = Math.max(0, state.activeSession.timeRemaining - deltaSec);
+                            state.timeRemaining = state.activeSession.timeRemaining;
+                            updateTimerDisplay();
+                            if (state.timeRemaining === 0) completeActiveSession();
+                        } else {
+                            state.activeSession.stopwatchElapsed += deltaSec;
+                            state.stopwatchElapsed = state.activeSession.stopwatchElapsed;
+                            updateTimerDisplay();
+                        }
+                        saveLocalStorage();
+                    }
+                }, 500);
+            } else {
+                document.getElementById('btn-start').classList.add('hidden');
+                document.getElementById('btn-resume').classList.remove('hidden');
+                document.getElementById('btn-finish').classList.remove('hidden');
+                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-amber-500";
+                document.getElementById('status-text').textContent = 'Paused';
+            }
+            updateTimerDisplay();
+        }
+
+        function restoreActiveSessionUI() {
+            resumeActiveSessionState();
+        }
+
+        // Custom duration modal
+        function openCustomDurationModal() {
+            if (state.isTimerRunning) return;
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            document.getElementById('modal-custom-duration').classList.remove('hidden');
+        }
+
+        function applyCustomDuration() {
+            const mins = parseInt(document.getElementById('custom-minutes-input').value);
+            if (mins && mins > 0) {
+                setPresetDuration(mins);
+            }
+            closeModal();
+        }
+
+        // --- Sidebar & Analytics Stats Calculation ---
+        function updateSidebarStats() {
+            const todayStr = new Date().toDateString();
+            let todaySec = 0;
+
+            state.sessions.forEach(sess => {
+                if (new Date(sess.startTime).toDateString() === todayStr) {
+                    todaySec += sess.durationSec;
+                }
+            });
+
+            const todayMins = Math.floor(todaySec / 60);
+            document.getElementById('sidebar-today-time').textContent = `${todayMins}m`;
+
+            const goalMins = state.settings.dailyGoal;
+            const pct = Math.min(100, Math.round((todayMins / goalMins) * 100));
+            document.getElementById('sidebar-progress-bar').style.width = `${pct}%`;
+            document.getElementById('sidebar-goal-text').textContent = `Goal: ${goalMins}m`;
+
+            // Calculate current streak
+            const streak = calculateStreak();
+            document.getElementById('sidebar-streak-count').textContent = `🔥 ${streak} day streak`;
+        }
+
+        function calculateStreak() {
+            if (state.sessions.length === 0) return 0;
+            const studyDays = new Set();
+            state.sessions.forEach(sess => {
+                studyDays.add(new Date(sess.startTime).toDateString());
+            });
+
+            let streak = 0;
+            let checkDate = new Date();
+            
+            // If today has no session, check starting yesterday
+            if (!studyDays.has(checkDate.toDateString())) {
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+
+            while (studyDays.has(checkDate.toDateString())) {
+                streak++;
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+            return streak;
+        }
+
+        // --- Activity View & Heatmap ---
+        function renderActivityView() {
+            // Summary stats
+            let totalSec = 0;
+            state.sessions.forEach(s => totalSec += s.durationSec);
+            const totalHours = (totalSec / 3600).toFixed(1);
+            document.getElementById('stat-total-hours').textContent = `${totalHours}h`;
+            document.getElementById('stat-total-sessions').textContent = state.sessions.length;
+
+            const streak = calculateStreak();
+            document.getElementById('stat-current-streak').textContent = `${streak} days`;
+            document.getElementById('stat-longest-streak').textContent = `Longest: ${streak} days`;
+
+            // Goal days count
+            const dailyMinsMap = {};
+            state.sessions.forEach(s => {
+                const dKey = new Date(s.startTime).toDateString();
+                dailyMinsMap[dKey] = (dailyMinsMap[dKey] || 0) + Math.floor(s.durationSec / 60);
+            });
+
+            let goalReachedCount = 0;
+            Object.values(dailyMinsMap).forEach(m => {
+                if (m >= state.settings.dailyGoal) goalReachedCount++;
+            });
+            document.getElementById('stat-goal-days').textContent = `${goalReachedCount} days`;
+
+            renderHeatmapGrid(dailyMinsMap);
+            renderWeeklyChart();
+            renderSubjectBreakdown();
+        }
+
+        function renderHeatmapGrid(dailyMinsMap) {
+            const grid = document.getElementById('heatmap-grid');
+            grid.innerHTML = '';
+
+            // 365 days back
+            const today = new Date();
+            for (let i = 364; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                const dKey = d.toDateString();
+                const mins = dailyMinsMap[dKey] || 0;
+
+                // Intensity level 0 to 4
+                let intensityClass = 'bg-charcoal-700/60 dark:bg-charcoal-700/60 bg-stone-200';
+                if (mins > 0 && mins < 30) intensityClass = 'bg-vermilion/30';
+                else if (mins >= 30 && mins < 60) intensityClass = 'bg-vermilion/60';
+                else if (mins >= 60 && mins < 120) intensityClass = 'bg-vermilion/90';
+                else if (mins >= 120) intensityClass = 'bg-vermilion';
+
+                const cell = document.createElement('div');
+                cell.className = `w-3 h-3 rounded-sm cursor-pointer transition-transform hover:scale-125 ${intensityClass}`;
+                cell.title = `${d.toLocaleDateString()}: ${mins} mins focused`;
+                cell.onclick = () => {
+                    document.getElementById('heatmap-selected-date-detail').textContent = `${d.toLocaleDateString()}: ${mins} mins studied`;
+                };
+                grid.appendChild(cell);
+            }
+        }
+
+        function renderWeeklyChart() {
+            const container = document.getElementById('weekly-chart-container');
+            container.innerHTML = '';
+
+            // Last 7 days
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const today = new Date();
+            const weekData = [];
+
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                const dKey = d.toDateString();
+                let daySec = 0;
+                state.sessions.forEach(s => {
+                    if (new Date(s.startTime).toDateString() === dKey) {
+                        daySec += s.durationSec;
+                    }
+                });
+                weekData.push({
+                    day: days[d.getDay()],
+                    mins: Math.floor(daySec / 60)
+                });
+            }
+
+            const maxMins = Math.max(...weekData.map(w => w.mins), 60);
+
+            weekData.forEach(w => {
+                const heightPct = Math.max(8, Math.round((w.mins / maxMins) * 100));
+                const col = document.createElement('div');
+                col.className = 'flex-1 flex flex-col items-center gap-2 h-full justify-end';
+                col.innerHTML = `
+                    <span class="text-[10px] text-stone-400 font-mono-digits">${w.mins}m</span>
+                    <div class="w-full bg-charcoal-700/40 dark:bg-charcoal-700/40 bg-stone-200 rounded-t-lg overflow-hidden flex items-end">
+                        <div class="w-full bg-vermilion transition-all duration-500 rounded-t-lg" style="height: ${heightPct}%"></div>
+                    </div>
+                    <span class="text-[11px] text-stone-400 font-medium">${w.day}</span>
+                `;
+                container.appendChild(col);
+            });
+        }
+
+        function renderSubjectBreakdown() {
+            const container = document.getElementById('subject-breakdown-container');
+            container.innerHTML = '';
+
+            const subjectSecMap = {};
+            let totalSec = 0;
+            state.sessions.forEach(s => {
+                subjectSecMap[s.subject] = (subjectSecMap[s.subject] || 0) + s.durationSec;
+                totalSec += s.durationSec;
+            });
+
+            if (Object.keys(subjectSecMap).length === 0) {
+                container.innerHTML = '<p class="text-xs text-stone-500">No subject data available yet.</p>';
+                return;
+            }
+
+            Object.entries(subjectSecMap).forEach(([sub, sec]) => {
+                const mins = Math.floor(sec / 60);
+                const pct = totalSec > 0 ? Math.round((sec / totalSec) * 100) : 0;
+
+                const row = document.createElement('div');
+                row.className = 'space-y-1';
+                row.innerHTML = `
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-medium text-stone-200 dark:text-stone-200 text-charcoal-900">${sub}</span>
+                        <span class="text-stone-400 font-mono-digits">${mins}m (${pct}%)</span>
+                    </div>
+                    <div class="w-full bg-charcoal-700/30 dark:bg-charcoal-700/30 bg-stone-200 h-2 rounded-full overflow-hidden">
+                        <div class="bg-vermilion h-full rounded-full" style="width: ${pct}%"></div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // --- History View & Management ---
+        function renderHistory() {
+            const tbody = document.getElementById('history-table-body');
+            const emptyState = document.getElementById('history-empty-state');
+            tbody.innerHTML = '';
+
+            // Populate subject filter dropdown
+            const filterSubSelect = document.getElementById('history-filter-subject');
+            const currentSubVal = filterSubSelect.value;
+            filterSubSelect.innerHTML = '<option value="all">All Subjects</option>';
+            state.subjects.forEach(sub => {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                opt.textContent = sub;
+                if (sub === currentSubVal) opt.selected = true;
+                filterSubSelect.appendChild(opt);
+            });
+
+            const filterSubject = filterSubSelect.value;
+            const filterStatus = document.getElementById('history-filter-status').value;
+
+            const filteredSessions = state.sessions.filter(s => {
+                if (filterSubject !== 'all' && s.subject !== filterSubject) return false;
+                if (filterStatus !== 'all' && s.status !== filterStatus) return false;
+                return true;
+            });
+
+            if (filteredSessions.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filteredSessions.forEach(s => {
+                const dateObj = new Date(s.startTime);
+                const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const mins = Math.floor(s.durationSec / 60);
+                const secs = s.durationSec % 60;
+                const durationStr = `${mins}m ${secs}s`;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-charcoal-700/20 transition-colors border-b border-charcoal-700/30';
+                tr.innerHTML = `
+                    <td class="py-3.5 px-6 font-mono-digits text-stone-300">${dateStr}</td>
+                    <td class="py-3.5 px-6 font-medium text-stone-200 dark:text-stone-200 text-charcoal-900">${s.subject}</td>
+                    <td class="py-3.5 px-6 text-stone-400 truncate max-w-xs">${s.task || '—'}</td>
+                    <td class="py-3.5 px-6 font-mono-digits text-stone-300">${durationStr}</td>
+                    <td class="py-3.5 px-6">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium ${s.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}">
+                            ${s.status === 'completed' ? 'Completed' : 'Manual'}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-6 text-right space-x-2">
+                        <button onclick="editSession('${s.id}')" class="text-stone-400 hover:text-stone-200 transition-colors p-1" title="Edit Session">
+                            <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="deleteSession('${s.id}')" class="text-rose-400 hover:text-rose-300 transition-colors p-1" title="Delete Session">
+                            <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function deleteSession(id) {
+            state.sessions = state.sessions.filter(s => s.id !== id);
+            saveLocalStorage();
+            renderHistory();
+            updateSidebarStats();
+        }
+
+        function editSession(id) {
+            const sess = state.sessions.find(s => s.id === id);
+            if (!sess) return;
+            const newMins = prompt("Enter corrected duration in minutes:", Math.floor(sess.durationSec / 60));
+            if (newMins !== null) {
+                const parsed = parseInt(newMins);
+                if (!isNaN(parsed) && parsed > 0) {
+                    sess.durationSec = parsed * 60;
+                    saveLocalStorage();
+                    renderHistory();
+                    updateSidebarStats();
+                }
+            }
+        }
+
+        // --- Settings & Subject Management ---
+        function populateSettingsForm() {
+            document.getElementById('setting-focus-duration').value = state.settings.focusDuration;
+            document.getElementById('setting-short-break').value = state.settings.shortBreak;
+            document.getElementById('setting-long-break').value = state.settings.longBreak;
+            document.getElementById('setting-daily-goal').value = state.settings.dailyGoal;
+            document.getElementById('setting-sound-type').value = state.settings.soundType;
+            document.getElementById('setting-notifications').checked = state.settings.notifications;
+
+            renderSubjectsList();
+        }
+
+        function renderSubjectsList() {
+            const container = document.getElementById('subjects-list-container');
+            container.innerHTML = '';
+
+            state.subjects.forEach((sub, idx) => {
+                const div = document.createElement('div');
+                div.className = 'py-2.5 flex items-center justify-between text-xs';
+                div.innerHTML = `
+                    <span class="font-medium text-stone-200 dark:text-stone-200 text-charcoal-900">${sub}</span>
+                    <button onclick="deleteSubject(${idx})" class="text-rose-400 hover:text-rose-300 p-1">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        function openAddSubjectModal() {
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            document.getElementById('modal-add-subject').classList.remove('hidden');
+        }
+
+        function createNewSubject() {
+            const input = document.getElementById('new-subject-name-input');
+            const name = input.value.trim();
+            if (name && !state.subjects.includes(name)) {
+                state.subjects.push(name);
+                saveLocalStorage();
+                populateSubjectsDropdown();
+                renderSubjectsList();
+                input.value = '';
+            }
+            closeModal();
+        }
+
+        function deleteSubject(idx) {
+            if (state.subjects.length <= 1) return; // Keep at least one subject
+            const removed = state.subjects.splice(idx, 1)[0];
+            if (state.selectedSubject === removed) {
+                state.selectedSubject = state.subjects[0];
+            }
+            saveLocalStorage();
+            populateSubjectsDropdown();
+            renderSubjectsList();
+        }
+
+        function populateSubjectsDropdown() {
+            const select = document.getElementById('subject-select');
+            select.innerHTML = '';
+            state.subjects.forEach(sub => {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                opt.textContent = sub;
+                if (sub === state.selectedSubject) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function saveAllSettings() {
+            state.settings.focusDuration = parseInt(document.getElementById('setting-focus-duration').value) || 25;
+            state.settings.shortBreak = parseInt(document.getElementById('setting-short-break').value) || 5;
+            state.settings.longBreak = parseInt(document.getElementById('setting-long-break').value) || 15;
+            state.settings.dailyGoal = parseInt(document.getElementById('setting-daily-goal').value) || 120;
+            state.settings.soundType = document.getElementById('setting-sound-type').value;
+            state.settings.notifications = document.getElementById('setting-notifications').checked;
+
+            saveLocalStorage();
+            if (!state.isTimerRunning && state.timerMode === 'focus') {
+                state.timeRemaining = state.settings.focusDuration * 60;
+                updateTimerDisplay();
+            }
+            updateSidebarStats();
+            alertMessage("Preferences saved successfully.");
+        }
+
+        function toggleNotificationSetting(checked) {
+            if (checked) {
+                requestNotificationPermission();
+            }
+        }
+
+        // --- Export / Import Backup ---
+        function exportDataJson() {
+            const data = {
+                settings: state.settings,
+                subjects: state.subjects,
+                sessions: state.sessions,
+                version: 1
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `stack_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function importDataJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && Array.isArray(parsed.sessions) && Array.isArray(parsed.subjects)) {
+                        state.settings = { ...DEFAULT_SETTINGS, ...parsed.settings };
+                        state.subjects = parsed.subjects;
+                        state.sessions = parsed.sessions;
+                        saveLocalStorage();
+                        populateSubjectsDropdown();
+                        updateSidebarStats();
+                        alertMessage("Data imported successfully.");
+                    } else {
+                        throw new Error("Invalid JSON structure");
+                    }
+                } catch (err) {
+                    alertMessage("Error: Invalid backup file format.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function confirmResetAllData() {
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            document.getElementById('modal-reset-confirm').classList.remove('hidden');
+        }
+
+        function executeResetAllData() {
+            localStorage.clear();
+            state.settings = { ...DEFAULT_SETTINGS };
+            state.subjects = [ ...DEFAULT_SUBJECTS ];
+            state.sessions = [];
+            state.activeSession = null;
+            state.selectedSubject = state.subjects[0];
+            closeModal();
+            resetTimerUI();
+            populateSubjectsDropdown();
+            updateSidebarStats();
+            alertMessage("All data has been reset.");
+        }
+
+        function alertMessage(msg) {
+            // Non-blocking toast or subtle alert notification
+            console.log("STACK Notice:", msg);
+        }
+
+        // --- Spotify Integration ---
+        function toggleMusicPanel() {
+            const panel = document.getElementById('spotify-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function saveSpotifyUrl() {
+            const inputVal = document.getElementById('spotify-url-input').value.trim();
+            const container = document.getElementById('spotify-embed-container');
+
+            if (!inputVal.includes('spotify.com')) {
+                container.innerHTML = '<p class="text-rose-400">Invalid Spotify URL. Please use a valid track, album, or playlist link.</p>';
+                return;
+            }
+
+            // Convert standard open.spotify.com URL to embed URL
+            // e.g. https://open.spotify.com/playlist/37i9dQZF1DX8Uebhn9wzrS -> https://open.spotify.com/embed/playlist/37i9dQZF1DX8Uebhn9wzrS
+            let embedUrl = inputVal;
+            if (inputVal.includes('/open.spotify.com/')) {
+                embedUrl = inputVal.replace('open.spotify.com/', 'open.spotify.com/embed/');
+            }
+
+            state.settings.spotifyUrl = embedUrl;
+            saveLocalStorage();
+            renderSpotifyEmbed(embedUrl);
+        }
+
+        function renderSpotifyEmbed(url) {
+            const container = document.getElementById('spotify-embed-container');
+            container.innerHTML = `
+                <iframe src="${url}?utm_source=generator&theme=0" width="100%" height="100%" style="border-radius:12px;" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+            `;
+        }
+
+        // --- Initialization on Load ---
+        window.onload = function() {
+            loadLocalStorage();
+            populateSubjectsDropdown();
+            updateSidebarStats();
+            setTimerMode('focus');
+
+            // Restore theme state
+            if (state.settings.theme === 'light') {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+            } else {
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
+            }
+
+            // Restore Spotify embed if present
+            if (state.settings.spotifyUrl) {
+                document.getElementById('spotify-url-input').value = state.settings.spotifyUrl;
+                renderSpotifyEmbed(state.settings.spotifyUrl);
+            }
+
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
